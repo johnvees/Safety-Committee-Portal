@@ -1,0 +1,90 @@
+[
+  {
+    "id": 1,
+    "name": "Admin",
+    "username": "admin",
+    "password": "admin123",
+    "role": "admin",
+    "department": "HSE",
+    "division": "HSE",
+    "position": "Admin",
+    "email": "admin@cpin.co.id"
+  },
+  {
+    "id": 2,
+    "name": "tes1",
+    "username": "tes1",
+    "password": "tes123",
+    "role": "president",
+    "department": "HSE",
+    "division": "HSE",
+    "position": "Tes President",
+    "email": "hsepresident@cpin.co.id"
+  },
+  {
+    "id": 3,
+    "name": "tes2",
+    "username": "tes2",
+    "password": "tes123",
+    "role": "vice_president",
+    "department": "HSE",
+    "division": "HSE",
+    "position": "Tes Vice President",
+    "email": "tesvp@cpin.co.id"
+  },
+  {
+    "id": 4,
+    "name": "tes3",
+    "username": "tes3",
+    "password": "tes123",
+    "role": "general_manager",
+    "department": "HSE",
+    "division": "HSE",
+    "position": "Tes General Manager",
+    "email": "tesgm@cpin.co.id"
+  },
+  {
+    "id": 5,
+    "name": "tes4",
+    "username": "tes4",
+    "password": "tes123",
+    "role": "manager",
+    "department": "HSE",
+    "division": "HSE",
+    "position": "Tes Manager",
+    "email": "tesmanager@cpin.co.id"
+  },
+  {
+    "id": 6,
+    "name": "tes5",
+    "username": "tes5",
+    "password": "tes123",
+    "role": "supervisor",
+    "department": "HSE",
+    "division": "HSE",
+    "position": "Tes Supervisor",
+    "email": "tesspv@cpin.co.id"
+  },
+  {
+    "id": 7,
+    "name": "tes6",
+    "username": "tes6",
+    "password": "tes123",
+    "role": "staff",
+    "department": "HSE",
+    "division": "HSE",
+    "position": "Tes Staff",
+    "email": "tesstaff@cpin.co.id"
+  },
+  {
+    "id": 8,
+    "name": "tes7",
+    "username": "tes7",
+    "password": "tes123",
+    "role": "viewer",
+    "department": "HSE",
+    "division": "HSE",
+    "position": "Tes Viewer",
+    "email": "tesviewer@cpin.co.id"
+  }
+]

@@ -1,0 +1,186 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Color tokens (RGB tuples for Tailwind opacity support) ── */
+:root {
+  /* Dark theme (default) */
+  --dark-900: 15 17 23;
+  --dark-800: 26 29 39;
+  --dark-700: 42 45 58;
+  --dark-600: 58 61 74;
+  --gray-100: 241 245 249;
+  --gray-200: 226 232 240;
+  --gray-300: 203 213 225;
+  --gray-400: 148 163 184;
+  --gray-500: 100 116 139;
+  --gray-600: 71 85 105;
+}
+
+/* Light theme overrides */
+.light {
+  --dark-900: 241 245 249;
+  --dark-800: 255 255 255;
+  --dark-700: 226 232 240;
+  --dark-600: 203 213 225;
+  --gray-100: 15 23 42;
+  --gray-200: 30 41 59;
+  --gray-300: 51 65 85;
+  --gray-400: 71 85 105;
+  --gray-500: 100 116 139;
+  --gray-600: 148 163 184;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  font-size: 16px;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+p, span, td, li, label, input, textarea, select, button {
+  font-size: inherit;
+}
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: rgb(var(--dark-800)); }
+::-webkit-scrollbar-thumb { background: rgb(var(--dark-600)); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgb(var(--gray-500)); }
+
+input:focus, select:focus, textarea:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+button, a, [role="button"] {
+  min-height: 36px;
+}
+
+input, select, textarea {
+  min-height: 44px;
+  font-size: 16px !important;
+}
+
+/* Date picker icon follows the color scheme */
+html { color-scheme: dark; }
+html.light { color-scheme: light; }
+input[type="date"] { color-scheme: inherit; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.35s ease-out both; }
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.toast { animation: toastIn 0.3s ease-out; }
+
+@keyframes checkPop {
+  0% { transform: scale(0.8); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+.finding-card:hover {
+  border-color: rgb(var(--dark-600)) !important;
+  background: rgb(var(--dark-800)) !important;
+}
+
+/* Light mode — give native inputs/selects a visible background */
+.light input,
+.light select,
+.light textarea {
+  background: rgb(var(--dark-800));
+  color: rgb(var(--gray-200));
+}
+
+/* ── Landing page animations ── */
+@keyframes blob {
+  0%, 100% { transform: translate(0px, 0px) scale(1); }
+  33%  { transform: translate(32px, -48px) scale(1.08); }
+  66%  { transform: translate(-24px, 28px) scale(0.95); }
+}
+@keyframes floatUp {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-16px) rotate(4deg); }
+}
+@keyframes floatDown {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(16px) rotate(-4deg); }
+}
+@keyframes tickerScroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes revealUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes headlineFade {
+  0%   { opacity: 0; transform: translateY(10px); }
+  12%  { opacity: 1; transform: translateY(0); }
+  85%  { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-10px); }
+}
+@keyframes shimmerBar {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes ping-slow {
+  0%    { transform: scale(1); opacity: 0.6; }
+  100%  { transform: scale(2.2); opacity: 0; }
+}
+
+.blob-1 { animation: blob 9s  ease-in-out infinite; }
+.blob-2 { animation: blob 11s ease-in-out infinite reverse; }
+.blob-3 { animation: blob 13s ease-in-out infinite 2s; }
+.float-a { animation: floatUp   4s   ease-in-out infinite; }
+.float-b { animation: floatDown 5s   ease-in-out infinite 0.6s; }
+.float-c { animation: floatUp   3.5s ease-in-out infinite 1.2s; }
+.float-d { animation: floatDown 4.5s ease-in-out infinite 0.3s; }
+.float-e { animation: floatUp   6s   ease-in-out infinite 1.8s; }
+.float-f { animation: floatDown 4s   ease-in-out infinite 0.9s; }
+.float-g { animation: floatUp   5s   ease-in-out infinite 2.4s; }
+.float-h { animation: floatDown 3.5s ease-in-out infinite 1.5s; }
+.float-i { animation: floatUp   4.5s ease-in-out infinite 0.4s; }
+.float-j { animation: floatDown 5.5s ease-in-out infinite 2.1s; }
+.spin-slow { animation: spinSlow 28s linear infinite; }
+.ticker-track { animation: tickerScroll 26s linear infinite; }
+.ticker-track:hover { animation-play-state: paused; }
+.headline-fade { animation: headlineFade 3s ease-in-out; }
+.ping-slow { animation: ping-slow 2s ease-out infinite; }
+
+.reveal { opacity: 0; transform: translateY(28px); }
+.revealed { animation: revealUp 0.6s ease-out forwards; }
+
+/* ── Shared form primitives (used in UsersPage modal) ── */
+@layer components {
+  .label {
+    @apply block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider;
+  }
+  .input {
+    @apply w-full bg-dark-900 border border-dark-700 rounded-xl px-3 py-2.5 text-sm text-gray-200 outline-none placeholder-gray-600 transition;
+  }
+  .input:focus {
+    @apply border-indigo-500/60;
+  }
+  .input-wrap {
+    @apply flex items-center gap-2 bg-dark-900 border border-dark-700 rounded-xl px-3 py-2.5 transition focus-within:border-indigo-500/60;
+  }
+  select.input {
+    @apply bg-dark-900;
+  }
+}

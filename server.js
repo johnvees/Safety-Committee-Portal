@@ -124,10 +124,25 @@ server.delete('/users/:id', (req, res) => {
   res.json({ success: true });
 });
 
-// ─── Findings: strip photos from list (lazy load on detail view) ──────────────
+// ─── Findings: strip photos from list and PATCH response ──────────────────────
+// Photos are large base64 blobs — only needed when explicitly fetching one finding.
 server.get('/findings', (_req, res) => {
   const findings = router.db.get('findings').value();
   res.json(findings.map(({ photos, ...rest }) => rest));
+});
+
+// Custom PATCH: merge body into record, persist, return without photos.
+// json-server's default PATCH returns the full record (photos included = ~2MB).
+server.patch('/findings/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const db = router.db;
+  const finding = db.get('findings').find({ id }).value();
+  if (!finding) return res.status(404).json({ error: 'Not found' });
+  const { id: _id, ...body } = req.body; // never overwrite id
+  db.get('findings').find({ id }).assign(body).write(); // .write() triggers SSE broadcast
+  const updated = db.get('findings').find({ id }).value();
+  const { photos: _, ...withoutPhotos } = updated;
+  res.json(withoutPhotos);
 });
 
 // ─── GuidelineDocs: strip fileUrl from list (lazy load) ───────────────────────

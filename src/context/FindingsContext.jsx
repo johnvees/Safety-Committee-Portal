@@ -81,6 +81,26 @@ export function FindingsProvider({ children }) {
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState(null)
 
+  // ── Photo cache ────────────────────────────────────────────────────────────
+  // Photos are stripped from the list endpoint to keep payloads small.
+  // This cache holds them separately, keyed by finding ID.
+  // fetchPhotos is a no-op if photos are already cached or currently fetching.
+  const [photoCache, setPhotoCache] = useState({})
+  const photoCacheRef = useRef({})
+  const fetchingRef = useRef(new Set())
+
+  const fetchPhotos = useCallback(async (id) => {
+    if (photoCacheRef.current[id] !== undefined || fetchingRef.current.has(id)) return
+    fetchingRef.current.add(id)
+    try {
+      const full = await api.getFinding(id)
+      photoCacheRef.current[id] = full.photos || []
+      setPhotoCache(prev => ({ ...prev, [id]: photoCacheRef.current[id] }))
+    } catch {} finally {
+      fetchingRef.current.delete(id)
+    }
+  }, [])
+
   const showToast = useCallback((message, type = 'info') => {
     setToast({ message, type })
     setTimeout(() => setToast(null), 3500)
@@ -147,7 +167,10 @@ export function FindingsProvider({ children }) {
       followUps: [],
       notifications: [createdNotif],
     })
-    setFindings(prev => [created, ...prev])
+    const { photos: _cp, ...createdWithoutPhotos } = created
+    photoCacheRef.current[created.id] = created.photos || []
+    setPhotoCache(prev => ({ ...prev, [created.id]: created.photos || [] }))
+    setFindings(prev => [createdWithoutPhotos, ...prev])
     showToast('Temuan baru berhasil disimpan!', 'success')
     return created
   }
@@ -166,18 +189,28 @@ export function FindingsProvider({ children }) {
       : existingNotifs
 
     const updated = await api.updateFinding(id, { ...data, notifications: merged })
-    setFindings(prev => prev.map(f => f.id === id ? updated : f))
+    // Strip photos before storing in context — keeping them in state would leak
+    // them into subsequent PATCH bodies and cause thumbnails to blink on SSE refresh.
+    const { photos: _, ...updatedWithoutPhotos } = updated
+    // If photos were part of this save (edit form), update the cache
+    if (updated.photos !== undefined) {
+      photoCacheRef.current[id] = updated.photos
+      setPhotoCache(prev => ({ ...prev, [id]: updated.photos }))
+    }
+    setFindings(prev => prev.map(f => f.id === id ? updatedWithoutPhotos : f))
     return updated
   }
 
   const deleteFinding = async (id) => {
     await api.deleteFinding(id)
+    delete photoCacheRef.current[id]
+    setPhotoCache(prev => { const next = { ...prev }; delete next[id]; return next })
     setFindings(prev => prev.filter(f => f.id !== id))
     showToast('Temuan berhasil dihapus.', 'success')
   }
 
   return (
-    <FindingsContext.Provider value={{ findings, loading, toast, showToast, loadFindings, createFinding, updateFinding, deleteFinding }}>
+    <FindingsContext.Provider value={{ findings, loading, toast, showToast, loadFindings, createFinding, updateFinding, deleteFinding, photoCache, fetchPhotos }}>
       {children}
     </FindingsContext.Provider>
   )

@@ -25,7 +25,7 @@ export const api = {
   getFindings: () => request(`${BASE}/findings`),
   getFinding: (id) => request(`${BASE}/findings/${id}`),
   createFinding: (data) => request(`${BASE}/findings`, { method: 'POST', body: JSON.stringify(data) }),
-  updateFinding: (id, data) => request(`${BASE}/findings/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  updateFinding: (id, data) => request(`${BASE}/findings/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   deleteFinding: (id) => request(`${BASE}/findings/${id}`, { method: 'DELETE' }),
 
   getGuidelineDocs: () => request(`${BASE}/guidelineDocs`),

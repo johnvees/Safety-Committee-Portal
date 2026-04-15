@@ -3,15 +3,13 @@ import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useFindings } from '../context/FindingsContext'
 import { getType, getPriority, getProgress, getDaysLeft, isCompleted, formatCurrency, formatDate, formatDateTime } from '../constants'
 import DiscussionPanel from '../components/DiscussionPanel'
-import { api } from '../api'
 import { ArrowLeft, Check, Calendar, MapPin, User, DollarSign, History, AlertTriangle, CheckCircle2, Trash2, X } from 'lucide-react'
 
 export default function FindingDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { findings, updateFinding, deleteFinding, showToast } = useFindings()
-  const [photos, setPhotos] = useState([])
+  const { findings, updateFinding, deleteFinding, showToast, photoCache, fetchPhotos } = useFindings()
   const [lightbox, setLightbox] = useState(null)
   const [archiveConfirm, setArchiveConfirm] = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
@@ -24,12 +22,12 @@ export default function FindingDetailPage() {
   const discussionRef = useRef(null)
 
   const f = findings.find(fi=>fi.id===Number(id))
+  const photos = photoCache[Number(id)] || []
 
-  // Fetch photos separately — list endpoint strips them to keep payloads small
+  // Warm the cache for this finding if not already loaded
   useEffect(() => {
-    if (!id) return
-    api.getFinding(Number(id)).then(full => setPhotos(full.photos || [])).catch(() => {})
-  }, [id])
+    if (id) fetchPhotos(Number(id))
+  }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const focus = searchParams.get('focus')
@@ -52,10 +50,10 @@ export default function FindingDetailPage() {
   const toggleCheck = async (cid) => {
     const cl=f.checklist.map(c=>c.id===cid?{...c,done:!c.done}:c); const willDone=cl.length>0&&cl.every(c=>c.done)
     if(willDone) {
-      setArchiveConfirm({ name: f.name, onConfirm: async () => { await updateFinding(f.id,{...f,photos,checklist:cl}); showToast('Selesai → Arsip','success') } })
+      setArchiveConfirm({ name: f.name, onConfirm: async () => { await updateFinding(f.id,{...f,checklist:cl}); showToast('Selesai → Arsip','success') } })
       return
     }
-    try { await updateFinding(f.id,{...f,photos,checklist:cl}) } catch { showToast('Gagal','error') }
+    try { await updateFinding(f.id,{...f,checklist:cl}) } catch { showToast('Gagal','error') }
   }
   const confirmArchive = async () => {
     if(!archiveConfirm) return

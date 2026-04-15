@@ -144,10 +144,8 @@ export default function DiscussionPanel({ finding, autoOpen = false }) {
     }))
 
     try {
-      const photos = await api.getFinding(finding.id).then(r => r.photos || []).catch(() => [])
       await updateFinding(finding.id, {
         ...finding,
-        photos,
         discussions: [...(finding.discussions || []), comment],
         notifications: [...(finding.notifications || []), ...mentionNotifs],
       })
@@ -162,10 +160,8 @@ export default function DiscussionPanel({ finding, autoOpen = false }) {
 
   const handleDeleteComment = async (cid) => {
     try {
-      const photos = await api.getFinding(finding.id).then(r => r.photos || []).catch(() => [])
       await updateFinding(finding.id, {
         ...finding,
-        photos,
         discussions: (finding.discussions || []).filter(d => d.id !== cid),
       })
     } catch {

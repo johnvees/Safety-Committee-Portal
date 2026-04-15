@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, Trash2, Check, Camera, Calendar, Paperclip, Search, X, Edit3, List, Loader2, Filter, Clock, ArrowRight, DollarSign, MapPin, User, History } from 'lucide-react'
 import { useFindings } from '../context/FindingsContext'
@@ -9,7 +9,7 @@ import DiscussionPanel from '../components/DiscussionPanel'
 import DateFilter, { matchesDateFilter, usePersistentDateFilter } from '../components/DateFilter'
 
 export default function FindingsPage() {
-  const { findings, loading, showToast, createFinding, updateFinding, deleteFinding } = useFindings()
+  const { findings, loading, showToast, createFinding, updateFinding, deleteFinding, photoCache, fetchPhotos } = useFindings()
   const { user } = useAuth()
   const [showModal, setShowModal] = useState(false)
   const [editId, setEditId] = useState(null)
@@ -36,12 +36,18 @@ export default function FindingsPage() {
     return ms && (!filterType || f.type === filterType) && matchesDateFilter(f.createdAt, dateRange)
   })
 
+  // Lazy-load photos for every visible finding; no-op if already cached
+  useEffect(() => {
+    findings.forEach(f => fetchPhotos(f.id))
+  }, [findings.map(f => f.id).join(',')])  // eslint-disable-line react-hooks/exhaustive-deps
+
   const resetForm = () => { setForm(emptyForm); setNewCheck(''); setNewFollowUp(''); setNewCostItem({description:'',sku:'',qty:'',unitCost:''}); setNewActualItem({description:'',sku:'',qty:'',unitCost:''}); setEditId(null) }
   const openNew = () => { resetForm(); setShowModal(true) }
   const openEdit = async (f) => {
-    // Fetch full finding to get photos (stripped from list endpoint)
-    const full = await api.getFinding(f.id).catch(() => f)
-    setForm({ name:f.name, type:f.type, priority:f.priority, description:f.description, findingDate:f.findingDate||'', deadline:f.deadline, area:f.area||'', reportedBy:f.reportedBy||'', assignedTo:f.assignedTo||'', costRequired:f.costRequired||false, costItems:(f.costItems||[]).map(c=>({...c})), actualCostItems:(f.actualCostItems||[]).map(c=>({...c})), costNotes:f.costNotes||'', photos:[...(full.photos||[])], checklist:(f.checklist||[]).map(c=>({...c})), discussions:(f.discussions||[]).map(d=>({...d})), followUps:(f.followUps||[]).map(fu=>({...fu})), notifications:f.notifications||[] })
+    // Use cache if ready, otherwise fetch (cache warms on mount so usually instant)
+    const cachedPhotos = photoCache[f.id]
+    const photos = cachedPhotos !== undefined ? cachedPhotos : await api.getFinding(f.id).then(r => r.photos || []).catch(() => [])
+    setForm({ name:f.name, type:f.type, priority:f.priority, description:f.description, findingDate:f.findingDate||'', deadline:f.deadline, area:f.area||'', reportedBy:f.reportedBy||'', assignedTo:f.assignedTo||'', costRequired:f.costRequired||false, costItems:(f.costItems||[]).map(c=>({...c})), actualCostItems:(f.actualCostItems||[]).map(c=>({...c})), costNotes:f.costNotes||'', photos:[...photos], checklist:(f.checklist||[]).map(c=>({...c})), discussions:(f.discussions||[]).map(d=>({...d})), followUps:(f.followUps||[]).map(fu=>({...fu})), notifications:f.notifications||[] })
     setEditId(f.id); setShowModal(true)
   }
   const addCheckItem = () => { if(!newCheck.trim()) return; setForm(p=>({...p,checklist:[...p.checklist,{id:Date.now(),text:newCheck.trim(),done:false}]})); setNewCheck('') }
@@ -86,12 +92,11 @@ export default function FindingsPage() {
   }
   const toggleCheck = async (finding, checkId) => {
     const cl=finding.checklist.map(c=>c.id===checkId?{...c,done:!c.done}:c); const willDone=cl.length>0&&cl.every(c=>c.done)
-    const photos = await api.getFinding(finding.id).then(r=>r.photos||[]).catch(()=>[])
     if(willDone) {
-      setArchiveConfirm({ name: finding.name, onConfirm: async () => { await updateFinding(finding.id,{...finding,photos,checklist:cl}); showToast(`"${finding.name}" selesai → Arsip`,'success') } })
+      setArchiveConfirm({ name: finding.name, onConfirm: async () => { await updateFinding(finding.id,{...finding,checklist:cl}); showToast(`"${finding.name}" selesai → Arsip`,'success') } })
       return
     }
-    try { await updateFinding(finding.id,{...finding,photos,checklist:cl}) } catch { showToast('Gagal','error') }
+    try { await updateFinding(finding.id,{...finding,checklist:cl}) } catch { showToast('Gagal','error') }
   }
   const confirmArchive = async () => {
     if(!archiveConfirm) return
@@ -212,7 +217,7 @@ export default function FindingsPage() {
 
 
             {/* Photos */}
-            {f.photos?.length>0 && <div className="flex gap-3 flex-wrap mb-4">{f.photos.map(p=><img key={p.id} src={p.url} alt="" className="w-20 h-20 rounded-xl object-cover border-2 border-dark-700 cursor-pointer hover:opacity-80 transition" onClick={()=>setLightbox(p.url)} />)}</div>}
+            {photoCache[f.id]?.length>0 && <div className="flex gap-3 flex-wrap mb-4">{photoCache[f.id].map(p=><img key={p.id} src={p.url} alt="" className="w-20 h-20 rounded-xl object-cover border-2 border-dark-700 cursor-pointer hover:opacity-80 transition" onClick={()=>setLightbox(p.url)} />)}</div>}
 
             {/* Discussion */}
             <DiscussionPanel finding={f} />

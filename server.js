@@ -4,6 +4,34 @@ const server = jsonServer.create();
 const router = jsonServer.router('db.json');
 const middlewares = jsonServer.defaults();
 
+// ─── SSE: real-time push ───────────────────────────────────────────────────────
+const clients = new Set()
+
+function broadcast(payload) {
+  const msg = `data: ${JSON.stringify(payload)}\n\n`
+  for (const client of clients) {
+    try {
+      client.write(msg)
+      // Force-flush the compression buffer — json-server's defaults middleware
+      // applies gzip to all responses, which buffers SSE events indefinitely.
+      // res.flush() (added by the compression package) drains that buffer immediately.
+      if (typeof client.flush === 'function') client.flush()
+    } catch {
+      clients.delete(client)
+    }
+  }
+}
+
+// Hook into lowdb's write — fires synchronously after every DB mutation.
+// This is more reliable than wrapping res.json/res.jsonp because json-server
+// uses res.jsonp internally, which our middleware would miss.
+const _dbWrite = router.db.write.bind(router.db)
+router.db.write = function () {
+  const result = _dbWrite()
+  broadcast({ type: 'change', resource: 'findings' })
+  return result
+}
+
 // ─── Users: file-backed mutable store ─────────────────────────────────────────
 const USERS_FILE = './users.json';
 let users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
@@ -15,6 +43,31 @@ server.use(require('body-parser').json({ limit: '100mb' }));
 server.use(require('body-parser').urlencoded({ limit: '100mb', extended: true }));
 
 server.use(middlewares);
+
+// ─── SSE endpoint ──────────────────────────────────────────────────────────────
+server.get('/events', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream')
+  res.setHeader('Cache-Control', 'no-cache')
+  res.setHeader('Connection', 'keep-alive')
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.flushHeaders()
+
+  // Confirm connection
+  res.write('data: {"type":"connected"}\n\n')
+  if (typeof res.flush === 'function') res.flush()
+
+  // Heartbeat every 25s to keep the connection alive through proxies/browsers
+  const heartbeat = setInterval(() => {
+    res.write(':heartbeat\n\n')
+    if (typeof res.flush === 'function') res.flush()
+  }, 25000)
+
+  clients.add(res)
+  req.on('close', () => {
+    clearInterval(heartbeat)
+    clients.delete(res)
+  })
+})
 
 // ─── Auth ──────────────────────────────────────────────────────────────────────
 server.post('/login', (req, res) => {
@@ -29,12 +82,10 @@ server.post('/login', (req, res) => {
 });
 
 // ─── Users CRUD ────────────────────────────────────────────────────────────────
-// GET /users — list all, no passwords
 server.get('/users', (_req, res) => {
   res.json(users.map(({ password: _, ...u }) => u));
 });
 
-// POST /users — create
 server.post('/users', (req, res) => {
   const { name, username, password, role, department, division, position, email } = req.body || {};
   if (!name || !username || !password || !role)
@@ -52,7 +103,6 @@ server.post('/users', (req, res) => {
   res.status(201).json(safe);
 });
 
-// PUT /users/:id — update (password optional)
 server.put('/users/:id', (req, res) => {
   const id = parseInt(req.params.id);
   const idx = users.findIndex(u => u.id === id);
@@ -65,7 +115,6 @@ server.put('/users/:id', (req, res) => {
   res.json(safe);
 });
 
-// DELETE /users/:id
 server.delete('/users/:id', (req, res) => {
   const id = parseInt(req.params.id);
   const idx = users.findIndex(u => u.id === id);

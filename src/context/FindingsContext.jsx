@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { api } from '../api'
 import { useAuth } from './AuthContext'
 
@@ -98,7 +98,37 @@ export function FindingsProvider({ children }) {
     }
   }, [showToast])
 
+  // Silent refresh — no loading spinner, used by SSE to sync state
+  const refreshTimer = useRef(null)
+  const silentRefresh = useCallback(() => {
+    clearTimeout(refreshTimer.current)
+    refreshTimer.current = setTimeout(async () => {
+      try {
+        const data = await api.getFindings()
+        setFindings(data)
+      } catch {}
+    }, 150)
+  }, [])
+
   useEffect(() => { loadFindings() }, [loadFindings])
+
+  // SSE — subscribe to server-pushed change events
+  useEffect(() => {
+    const es = new EventSource('http://localhost:3001/events')
+    es.onmessage = (e) => {
+      try {
+        const payload = JSON.parse(e.data)
+        if (payload.type === 'change' && payload.resource === 'findings') {
+          silentRefresh()
+        }
+      } catch {}
+    }
+    // EventSource auto-reconnects on error — no manual handling needed
+    return () => {
+      es.close()
+      clearTimeout(refreshTimer.current)
+    }
+  }, [silentRefresh])
 
   const createFinding = async (data) => {
     const createdNotif = {

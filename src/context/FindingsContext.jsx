@@ -9,7 +9,7 @@ const now = () => new Date().toISOString()
 
 function buildUpdateNotifications(old, data, actorName) {
   const notifs = []
-  const by = actorName ? ` oleh ${actorName}` : ''
+  const by = actorName ? ` by ${actorName}` : ''
 
   // Checklist item changes — one notification per changed item
   if (old.checklist && data.checklist) {
@@ -19,7 +19,7 @@ function buildUpdateNotifications(old, data, actorName) {
         notifs.push({
           id: uid(),
           type: 'checklist',
-          message: `Item "${c.text}" di "${data.name}" telah ${c.done ? 'diselesaikan ✓' : 'dibatalkan'}${by}`,
+          message: `Item "${c.text}" in "${data.name}" has been ${c.done ? 'completed ✓' : 'unchecked'}${by}`,
           date: now(),
           read: false,
           targetRule: 'all',
@@ -39,7 +39,7 @@ function buildUpdateNotifications(old, data, actorName) {
     notifs.push({
       id: uid(),
       type: 'cost_updated',
-      message: `Biaya temuan "${data.name}" telah diperbarui${by}`,
+      message: `Cost for "${data.name}" has been updated${by}`,
       date: now(),
       read: false,
       targetRule: 'all',
@@ -51,7 +51,7 @@ function buildUpdateNotifications(old, data, actorName) {
     notifs.push({
       id: uid(),
       type: 'deadline_updated',
-      message: `Deadline temuan "${data.name}" diperbarui${data.deadline ? ` → ${data.deadline}` : ''}${by}`,
+      message: `Deadline for "${data.name}" updated${data.deadline ? ` → ${data.deadline}` : ''}${by}`,
       date: now(),
       read: false,
       targetRule: 'all',
@@ -65,7 +65,7 @@ function buildUpdateNotifications(old, data, actorName) {
     notifs.push({
       id: uid(),
       type: 'updated',
-      message: `Detail temuan "${data.name}" diperbarui${by}`,
+      message: `Details of "${data.name}" updated${by}`,
       date: now(),
       read: false,
       targetRule: 'all',
@@ -112,7 +112,7 @@ export function FindingsProvider({ children }) {
       const data = await api.getFindings()
       setFindings(data)
     } catch {
-      showToast('Gagal memuat data. Pastikan json-server berjalan.', 'error')
+      showToast('Failed to load data. Make sure the server is running.', 'error')
     } finally {
       setLoading(false)
     }
@@ -154,7 +154,7 @@ export function FindingsProvider({ children }) {
     const createdNotif = {
       id: uid(),
       type: 'created',
-      message: `Temuan baru "${data.name}" ditambahkan oleh ${user?.name || 'seseorang'}`,
+      message: `New finding "${data.name}" added by ${user?.name || 'someone'}`,
       date: now(),
       read: false,
       targetRule: 'all',
@@ -171,7 +171,7 @@ export function FindingsProvider({ children }) {
     photoCacheRef.current[created.id] = created.photos || []
     setPhotoCache(prev => ({ ...prev, [created.id]: created.photos || [] }))
     setFindings(prev => [createdWithoutPhotos, ...prev])
-    showToast('Temuan baru berhasil disimpan!', 'success')
+    showToast('New finding saved successfully!', 'success')
     return created
   }
 
@@ -206,7 +206,7 @@ export function FindingsProvider({ children }) {
     delete photoCacheRef.current[id]
     setPhotoCache(prev => { const next = { ...prev }; delete next[id]; return next })
     setFindings(prev => prev.filter(f => f.id !== id))
-    showToast('Temuan berhasil dihapus.', 'success')
+    showToast('Finding deleted successfully.', 'success')
   }
 
   return (

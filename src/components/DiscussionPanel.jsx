@@ -137,7 +137,7 @@ export default function DiscussionPanel({ finding, autoOpen = false }) {
     const mentionNotifs = mentionedUsernames.map(username => ({
       id: `mention-${Date.now()}-${username}-${Math.random().toString(36).slice(2)}`,
       type: 'mention',
-      message: `${user?.name || 'Seseorang'} menyebut kamu dalam diskusi "${finding.name}"`,
+      message: `${user?.name || 'Someone'} mentioned you in "${finding.name}"`,
       date: new Date().toISOString(),
       read: false,
       targetUsername: username,
@@ -150,7 +150,7 @@ export default function DiscussionPanel({ finding, autoOpen = false }) {
         notifications: [...(finding.notifications || []), ...mentionNotifs],
       })
     } catch {
-      showToast('Gagal mengirim komentar', 'error')
+      showToast('Failed to send comment', 'error')
     }
 
     setMessage('')
@@ -165,7 +165,7 @@ export default function DiscussionPanel({ finding, autoOpen = false }) {
         discussions: (finding.discussions || []).filter(d => d.id !== cid),
       })
     } catch {
-      showToast('Gagal menghapus komentar', 'error')
+      showToast('Failed to delete comment', 'error')
     }
   }
 
@@ -184,7 +184,7 @@ export default function DiscussionPanel({ finding, autoOpen = false }) {
       <button onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center gap-3 text-sm font-semibold px-4 py-3 rounded-xl transition w-full ${flashing ? 'discussion-pulse' : ''} ${isOpen ? 'bg-indigo-500/15 text-indigo-300' : 'bg-dark-800 text-gray-400 hover:text-gray-200 hover:bg-dark-700'}`}>
         <MessageCircle size={20} />
-        <span>Diskusi ({discussions.length})</span>
+        <span>Discussion ({discussions.length})</span>
         <span className="ml-auto">{isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}</span>
       </button>
 
@@ -194,7 +194,7 @@ export default function DiscussionPanel({ finding, autoOpen = false }) {
             {discussions.length === 0 && (
               <div className="text-center py-8 text-gray-500">
                 <MessageCircle size={36} className="mx-auto mb-3 opacity-40" />
-                <p className="text-sm">Belum ada diskusi. Mulai percakapan!</p>
+                <p className="text-sm">No discussion yet. Start the conversation!</p>
               </div>
             )}
             {discussions.map(d => (
@@ -222,9 +222,9 @@ export default function DiscussionPanel({ finding, autoOpen = false }) {
           <div className="border-t border-dark-700 p-4">
             {user && (
               <p className="text-xs text-gray-500 mb-2">
-                Komentar sebagai <span className="font-semibold text-gray-400">{user.name}</span>
+                Commenting as <span className="font-semibold text-gray-400">{user.name}</span>
                 {user.position && <span className="text-gray-600"> · {user.position}</span>}
-                <span className="ml-2 text-gray-700">· Ketik <span className="text-indigo-500/70 font-mono">@</span> untuk mention</span>
+                <span className="ml-2 text-gray-700">· Type <span className="text-indigo-500/70 font-mono">@</span> to mention</span>
               </p>
             )}
 
@@ -256,7 +256,7 @@ export default function DiscussionPanel({ finding, autoOpen = false }) {
 
               {mentionQuery !== null && filteredUsers.length === 0 && mentionQuery.length > 0 && (
                 <div className="absolute bottom-full mb-2 left-0 right-0 bg-dark-800 border border-dark-600 rounded-xl shadow-2xl px-4 py-3 z-50">
-                  <p className="text-sm text-gray-500 flex items-center gap-2"><AtSign size={14} /> Tidak ada user dengan nama "{mentionQuery}"</p>
+                  <p className="text-sm text-gray-500 flex items-center gap-2"><AtSign size={14} /> No user found with name "{mentionQuery}"</p>
                 </div>
               )}
 
@@ -264,7 +264,7 @@ export default function DiscussionPanel({ finding, autoOpen = false }) {
                 <input
                   ref={inputRef}
                   className="bg-transparent border-none outline-none text-base text-gray-200 w-full placeholder-gray-500"
-                  placeholder="Tulis komentar... (@ untuk mention)"
+                  placeholder="Write a comment... (@ to mention)"
                   value={message}
                   onChange={handleChange}
                   onKeyDown={handleKeyDown}

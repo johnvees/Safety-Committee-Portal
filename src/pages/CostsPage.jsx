@@ -58,10 +58,10 @@ export default function CostsPage() {
     <div className="space-y-7">
       <div>
         <h1 className="text-3xl font-extrabold text-gray-100 tracking-tight flex items-center gap-3">
-          <DollarSign size={28} className="text-amber-400" /> Laporan Biaya
+          <DollarSign size={28} className="text-amber-400" /> Cost Report
         </h1>
         <p className="text-base text-gray-400 mt-1">
-          Tracking estimasi & realisasi biaya perbaikan
+          Track estimated & actual repair costs
         </p>
       </div>
 
@@ -73,23 +73,23 @@ export default function CostsPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           {
-            l: 'Total Estimasi',
+            l: 'Total Estimate',
             v: formatCurrency(totalEst),
             c: '#f59e0b',
           },
           {
-            l: 'Realisasi',
+            l: 'Actual',
             v: formatCurrency(totalAct),
             c: '#10b981',
           },
           {
-            l: 'Dengan Biaya',
-            v: `${withCost.length} temuan`,
+            l: 'With Cost',
+            v: `${withCost.length} findings`,
             c: '#6366f1',
           },
           {
             l: 'Over Budget',
-            v: `${overBudget.length} temuan`,
+            v: `${overBudget.length} findings`,
             c: '#ef4444',
           },
         ].map((s, i) => (
@@ -113,8 +113,8 @@ export default function CostsPage() {
         <div className="bg-red-500/8 border border-red-500/15 rounded-xl px-5 py-4 flex items-center gap-3">
           <AlertTriangle size={20} className="text-red-400 shrink-0" />
           <p className="text-base text-red-300">
-            <span className="font-bold">{overBudget.length} temuan</span>{' '}
-            melebihi estimasi biaya awal.
+            <span className="font-bold">{overBudget.length} findings</span>{' '}
+            exceed the initial cost estimate.
           </p>
         </div>
       )}
@@ -122,13 +122,13 @@ export default function CostsPage() {
       <div className="bg-dark-800 border border-dark-700 rounded-2xl overflow-hidden">
         <div className="px-6 py-5 border-b border-dark-700 flex items-center justify-between gap-4 flex-wrap">
           <h3 className="text-lg font-bold text-gray-100">
-            Detail Biaya per Temuan
+            Cost Detail per Finding
           </h3>
           <div className="flex items-center gap-2 bg-dark-900 border border-dark-700 rounded-xl px-4 focus-within:border-indigo-500 transition w-64">
             <Search size={18} className="text-gray-500 shrink-0" />
             <input
               className="bg-transparent border-none outline-none text-sm text-gray-200 w-full placeholder-gray-500"
-              placeholder="Cari temuan, area, catatan..."
+              placeholder="Search findings, area, notes..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -146,7 +146,7 @@ export default function CostsPage() {
           <div className="text-center py-16 text-gray-500">
             <DollarSign size={44} className="mx-auto mb-3 opacity-25" />
             <p className="text-base">
-              Belum ada temuan dengan biaya pada rentang ini.
+              No findings with costs in this range.
             </p>
           </div>
         ) : (
@@ -155,13 +155,13 @@ export default function CostsPage() {
               <thead>
                 <tr className="border-b border-dark-700 text-sm text-gray-400 uppercase tracking-wider">
                   <th className="px-6 py-4 font-bold w-8"></th>
-                  <th className="px-4 py-4 font-bold">Temuan</th>
+                  <th className="px-4 py-4 font-bold">Finding</th>
                   <th className="px-5 py-4 font-bold">Area</th>
-                  <th className="px-5 py-4 font-bold text-right">Estimasi</th>
-                  <th className="px-5 py-4 font-bold text-right">Aktual</th>
-                  <th className="px-5 py-4 font-bold text-right">Selisih</th>
+                  <th className="px-5 py-4 font-bold text-right">Estimate</th>
+                  <th className="px-5 py-4 font-bold text-right">Actual</th>
+                  <th className="px-5 py-4 font-bold text-right">Variance</th>
                   <th className="px-5 py-4 font-bold">Status</th>
-                  <th className="px-5 py-4 font-bold">Catatan</th>
+                  <th className="px-5 py-4 font-bold">Notes</th>
                   <th className="px-4 py-4 font-bold"></th>
                 </tr>
               </thead>
@@ -244,7 +244,7 @@ export default function CostsPage() {
                             ) : (
                               <Clock size={12} />
                             )}
-                            {done ? 'Selesai' : 'Aktif'}
+                            {done ? 'Completed' : 'Active'}
                           </span>
                         </td>
                         <td className="px-5 py-4 text-base text-gray-500 max-w-[200px] truncate">
@@ -254,7 +254,7 @@ export default function CostsPage() {
                           <button
                             onClick={e => { e.stopPropagation(); navigate(`/findings/${f.id}`); }}
                             className="p-2 rounded-lg text-gray-600 hover:text-indigo-400 hover:bg-indigo-500/10 transition"
-                            title="Lihat detail temuan"
+                            title="View finding detail"
                           >
                             <Eye size={16} />
                           </button>
@@ -272,10 +272,10 @@ export default function CostsPage() {
                                 {/* Estimated cost items */}
                                 <div>
                                   <p className="text-xs font-bold text-amber-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                    <TrendingUp size={14} /> Rincian Biaya Estimasi
+                                    <TrendingUp size={14} /> Estimated Cost Breakdown
                                   </p>
                                   {estItems.length === 0 ? (
-                                    <p className="text-sm text-gray-600 italic">Tidak ada rincian.</p>
+                                    <p className="text-sm text-gray-600 italic">No breakdown available.</p>
                                   ) : (
                                     <table className="w-full text-sm">
                                       <thead>
@@ -283,7 +283,7 @@ export default function CostsPage() {
                                           <th className="pb-2 text-left font-semibold">Item</th>
                                           <th className="pb-2 text-left font-semibold">SKU</th>
                                           <th className="pb-2 text-center font-semibold w-16">Qty</th>
-                                          <th className="pb-2 text-right font-semibold">Harga Satuan</th>
+                                          <th className="pb-2 text-right font-semibold">Unit Price</th>
                                           <th className="pb-2 text-right font-semibold">Total</th>
                                         </tr>
                                       </thead>
@@ -300,7 +300,7 @@ export default function CostsPage() {
                                       </tbody>
                                       <tfoot>
                                         <tr className="border-t border-dark-600">
-                                          <td colSpan={4} className="pt-2 text-gray-400 font-bold text-xs uppercase">Total Estimasi</td>
+                                          <td colSpan={4} className="pt-2 text-gray-400 font-bold text-xs uppercase">Total Estimate</td>
                                           <td className="pt-2 text-right text-amber-300 font-mono font-extrabold">{formatCurrency(f.estimatedCost || 0)}</td>
                                         </tr>
                                       </tfoot>
@@ -311,10 +311,10 @@ export default function CostsPage() {
                                 {/* Actual cost items */}
                                 <div>
                                   <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                    <TrendingDown size={14} /> Rincian Biaya Aktual
+                                    <TrendingDown size={14} /> Actual Cost Breakdown
                                   </p>
                                   {actItems.length === 0 ? (
-                                    <p className="text-sm text-gray-600 italic">Belum ada realisasi biaya.</p>
+                                    <p className="text-sm text-gray-600 italic">No actual costs recorded yet.</p>
                                   ) : (
                                     <table className="w-full text-sm">
                                       <thead>
@@ -322,7 +322,7 @@ export default function CostsPage() {
                                           <th className="pb-2 text-left font-semibold">Item</th>
                                           <th className="pb-2 text-left font-semibold">SKU</th>
                                           <th className="pb-2 text-center font-semibold w-16">Qty</th>
-                                          <th className="pb-2 text-right font-semibold">Harga Satuan</th>
+                                          <th className="pb-2 text-right font-semibold">Unit Price</th>
                                           <th className="pb-2 text-right font-semibold">Total</th>
                                         </tr>
                                       </thead>
@@ -339,7 +339,7 @@ export default function CostsPage() {
                                       </tbody>
                                       <tfoot>
                                         <tr className="border-t border-dark-600">
-                                          <td colSpan={4} className="pt-2 text-gray-400 font-bold text-xs uppercase">Total Aktual</td>
+                                          <td colSpan={4} className="pt-2 text-gray-400 font-bold text-xs uppercase">Total Actual</td>
                                           <td className="pt-2 text-right text-emerald-300 font-mono font-extrabold">{formatCurrency(f.actualCost || 0)}</td>
                                         </tr>
                                       </tfoot>
@@ -351,12 +351,12 @@ export default function CostsPage() {
                               {/* Selisih summary */}
                               {fDiff !== null && (
                                 <div className="mt-4 pt-4 border-t border-dark-700 flex items-center justify-end gap-3">
-                                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Selisih</span>
+                                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Variance</span>
                                   <span className={`flex items-center gap-1 text-sm font-extrabold font-mono ${fDiff > 0 ? 'text-red-400' : fDiff < 0 ? 'text-emerald-400' : 'text-gray-400'}`}>
                                     {fDiff > 0 ? <ArrowUpRight size={15} /> : fDiff < 0 ? <ArrowDownRight size={15} /> : null}
                                     {formatCurrency(Math.abs(fDiff))}
                                     <span className="text-xs font-semibold ml-1">
-                                      {fDiff > 0 ? '(over budget)' : fDiff < 0 ? '(under budget)' : '(sesuai estimasi)'}
+                                      {fDiff > 0 ? '(over budget)' : fDiff < 0 ? '(under budget)' : '(on budget)'}
                                     </span>
                                   </span>
                                 </div>

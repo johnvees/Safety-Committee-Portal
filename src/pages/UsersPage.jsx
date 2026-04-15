@@ -22,22 +22,22 @@ const ROLES = ['president', 'vice_president', 'general_manager', 'manager', 'sup
 const DEPARTMENTS = [
   'HSE',
   'Quality Control',
-  'Operasional',
+  'Operations',
   'Maintenance',
-  'Lingkungan',
+  'Environment',
   'Engineering',
-  'Administrasi',
-  'Manajemen',
-  'Logistik',
-  'Produksi',
+  'Administration',
+  'Management',
+  'Logistics',
+  'Production',
 ];
 const DIVISIONS = [
-  'Manajemen',
-  'Produksi',
+  'Management',
+  'Production',
   'Engineering',
-  'Administrasi',
+  'Administration',
   'HSE',
-  'Logistik',
+  'Logistics',
 ];
 
 const EMPTY_FORM = {
@@ -82,11 +82,11 @@ function UserModal({ editUser, currentUser, onClose, onSaved }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name.trim()) return setError('Nama wajib diisi');
-    if (!form.username.trim()) return setError('Username wajib diisi');
+    if (!form.name.trim()) return setError('Name is required');
+    if (!form.username.trim()) return setError('Username is required');
     if (!isEdit && !form.password.trim())
-      return setError('Password wajib diisi untuk akun baru');
-    if (!form.role) return setError('Role wajib dipilih');
+      return setError('Password is required for new accounts');
+    if (!form.role) return setError('Role is required');
     setSaving(true);
     setError('');
     try {
@@ -112,7 +112,7 @@ function UserModal({ editUser, currentUser, onClose, onSaved }) {
         <div className="flex items-center justify-between px-6 py-4 border-b border-dark-700">
           <h2 className="text-base font-bold text-gray-100 flex items-center gap-2">
             <UserPlus size={18} className="text-indigo-400" />
-            {isEdit ? 'Edit Pengguna' : 'Tambah Pengguna Baru'}
+            {isEdit ? 'Edit User' : 'Add New User'}
           </h2>
           <button
             onClick={onClose}
@@ -130,7 +130,7 @@ function UserModal({ editUser, currentUser, onClose, onSaved }) {
           {/* Name + Username */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="label">Nama Lengkap *</label>
+              <label className="label">Full Name *</label>
               <input
                 ref={firstRef}
                 className="input"
@@ -157,7 +157,7 @@ function UserModal({ editUser, currentUser, onClose, onSaved }) {
               Password{' '}
               {isEdit && (
                 <span className="text-gray-600 font-normal normal-case">
-                  (kosongkan jika tidak diubah)
+                  (leave blank to keep unchanged)
                 </span>
               )}
               {!isEdit && <span className="text-red-400">*</span>}
@@ -166,7 +166,7 @@ function UserModal({ editUser, currentUser, onClose, onSaved }) {
               <input
                 className="bg-transparent border-none outline-none text-sm text-gray-200 w-full placeholder-gray-600"
                 type={showPw ? 'text' : 'password'}
-                placeholder={isEdit ? '••••••••' : 'Min. 6 karakter'}
+                placeholder={isEdit ? '••••••••' : 'Min. 6 characters'}
                 value={form.password}
                 onChange={(e) => set('password', e.target.value)}
                 autoComplete="new-password"
@@ -217,7 +217,7 @@ function UserModal({ editUser, currentUser, onClose, onSaved }) {
           {/* Department + Division */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="label">Departemen</label>
+              <label className="label">Department</label>
               <input
                 className="input"
                 list="dept-list"
@@ -232,7 +232,7 @@ function UserModal({ editUser, currentUser, onClose, onSaved }) {
               </datalist>
             </div>
             <div>
-              <label className="label">Divisi</label>
+              <label className="label">Division</label>
               <input
                 className="input"
                 list="div-list"
@@ -251,7 +251,7 @@ function UserModal({ editUser, currentUser, onClose, onSaved }) {
           {/* Position + Email */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="label">Jabatan</label>
+              <label className="label">Position</label>
               <input
                 className="input"
                 placeholder="HSE Manager"
@@ -281,8 +281,8 @@ function UserModal({ editUser, currentUser, onClose, onSaved }) {
                   className="text-amber-400 shrink-0 mt-0.5"
                 />
                 <p className="text-xs text-amber-400">
-                  Anda sedang mengubah role akun sendiri. Pastikan masih ada
-                  admin lain.
+                  You are changing your own account role. Make sure there is
+                  still another admin.
                 </p>
               </div>
             )}
@@ -303,7 +303,7 @@ function UserModal({ editUser, currentUser, onClose, onSaved }) {
             onClick={onClose}
             className="px-4 py-2 text-sm text-gray-400 hover:text-gray-200 transition"
           >
-            Batal
+            Cancel
           </button>
           <button
             onClick={handleSubmit}
@@ -313,12 +313,12 @@ function UserModal({ editUser, currentUser, onClose, onSaved }) {
             {saving ? (
               <>
                 <Loader2 size={15} className="animate-spin" />
-                Menyimpan...
+                Saving...
               </>
             ) : (
               <>
                 <Check size={15} />
-                {isEdit ? 'Simpan Perubahan' : 'Buat Akun'}
+                {isEdit ? 'Save Changes' : 'Create Account'}
               </>
             )}
           </button>
@@ -337,11 +337,11 @@ function DeleteConfirm({ target, onClose, onConfirm, loading }) {
           <Trash2 size={26} className="text-red-400" />
         </div>
         <div>
-          <h3 className="text-base font-bold text-gray-100">Hapus Pengguna?</h3>
+          <h3 className="text-base font-bold text-gray-100">Delete User?</h3>
           <p className="text-sm text-gray-400 mt-1">
-            Akun{' '}
+            Account{' '}
             <span className="text-gray-200 font-semibold">{target.name}</span>{' '}
-            (@{target.username}) akan dihapus permanen.
+            (@{target.username}) will be permanently deleted.
           </p>
         </div>
         <div className="flex gap-3">
@@ -349,7 +349,7 @@ function DeleteConfirm({ target, onClose, onConfirm, loading }) {
             onClick={onClose}
             className="flex-1 py-2.5 text-sm font-semibold text-gray-400 hover:text-gray-200 bg-dark-900 border border-dark-700 rounded-xl transition"
           >
-            Batal
+            Cancel
           </button>
           <button
             onClick={onConfirm}
@@ -361,7 +361,7 @@ function DeleteConfirm({ target, onClose, onConfirm, loading }) {
             ) : (
               <Trash2 size={15} />
             )}
-            Hapus
+            Delete
           </button>
         </div>
       </div>
@@ -371,7 +371,7 @@ function DeleteConfirm({ target, onClose, onConfirm, loading }) {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function extractError(err) {
-  return err.message || 'Terjadi kesalahan';
+  return err.message || 'An error occurred';
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
@@ -424,7 +424,7 @@ export default function UsersPage() {
       setUsers((us) => us.filter((u) => u.id !== delTarget.id));
       setDelTarget(null);
     } catch (err) {
-      alert('Gagal menghapus: ' + (err.message || 'error'));
+      alert('Failed to delete: ' + (err.message || 'error'));
     } finally {
       setDelLoading(false);
     }
@@ -439,10 +439,10 @@ export default function UsersPage() {
         <div>
           <h1 className="text-3xl font-extrabold text-gray-100 tracking-tight flex items-center gap-3">
             <Users size={28} className="text-indigo-400" />
-            Manajemen Pengguna
+            User Management
           </h1>
           <p className="text-base text-gray-400 mt-1">
-            Kelola akun, role, dan akses pengguna sistem
+            Manage user accounts, roles, and system access
           </p>
         </div>
         <button
@@ -450,7 +450,7 @@ export default function UsersPage() {
           className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl transition shadow-lg shadow-indigo-500/20"
         >
           <UserPlus size={17} />
-          Tambah Pengguna
+          Add User
         </button>
       </div>
 
@@ -490,7 +490,7 @@ export default function UsersPage() {
         <Search size={17} className="text-gray-500 shrink-0" />
         <input
           className="bg-transparent border-none outline-none text-sm text-gray-200 w-full placeholder-gray-600"
-          placeholder="Cari nama, username, departemen..."
+          placeholder="Search name, username, department..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -509,31 +509,31 @@ export default function UsersPage() {
         {loading ? (
           <div className="flex items-center justify-center py-20 text-gray-500">
             <Loader2 size={28} className="animate-spin mr-3" />
-            Memuat data pengguna...
+            Loading users...
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-16 text-gray-500">
             <Users size={44} className="mx-auto mb-3 opacity-25" />
-            <p>Tidak ada pengguna ditemukan</p>
+            <p>No users found</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-dark-700 text-xs text-gray-500 uppercase tracking-wider">
-                  <th className="px-5 py-3.5 text-left font-bold">Pengguna</th>
+                  <th className="px-5 py-3.5 text-left font-bold">User</th>
                   <th className="px-4 py-3.5 text-left font-bold">Username</th>
                   <th className="px-4 py-3.5 text-left font-bold">Role</th>
                   <th className="px-4 py-3.5 text-left font-bold hidden md:table-cell">
-                    Departemen
+                    Department
                   </th>
                   <th className="px-4 py-3.5 text-left font-bold hidden lg:table-cell">
-                    Jabatan
+                    Position
                   </th>
                   <th className="px-4 py-3.5 text-left font-bold hidden lg:table-cell">
                     Email
                   </th>
-                  <th className="px-4 py-3.5 text-right font-bold">Aksi</th>
+                  <th className="px-4 py-3.5 text-right font-bold">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-dark-700/60">
@@ -563,7 +563,7 @@ export default function UsersPage() {
                               {u.name}
                               {isSelf && (
                                 <span className="text-xs bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded font-medium">
-                                  Anda
+                                  You
                                 </span>
                               )}
                             </p>
@@ -609,7 +609,7 @@ export default function UsersPage() {
                           <button
                             onClick={() => setModal({ user: u })}
                             className="p-2 rounded-lg text-gray-600 hover:text-indigo-400 hover:bg-indigo-500/10 transition"
-                            title="Edit pengguna"
+                            title="Edit user"
                           >
                             <Pencil size={15} />
                           </button>
@@ -619,10 +619,10 @@ export default function UsersPage() {
                             className="p-2 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition disabled:opacity-30 disabled:cursor-not-allowed"
                             title={
                               isSelf
-                                ? 'Tidak dapat menghapus akun sendiri'
+                                ? 'Cannot delete your own account'
                                 : isLastAdmin
-                                  ? 'Minimal satu admin harus ada'
-                                  : 'Hapus pengguna'
+                                  ? 'At least one admin must remain'
+                                  : 'Delete user'
                             }
                           >
                             <Trash2 size={15} />
@@ -640,7 +640,7 @@ export default function UsersPage() {
         {/* Footer count */}
         {!loading && filtered.length > 0 && (
           <div className="px-5 py-3 border-t border-dark-700/60 text-xs text-gray-600">
-            Menampilkan {filtered.length} dari {users.length} pengguna
+            Showing {filtered.length} of {users.length} users
           </div>
         )}
       </div>
@@ -648,41 +648,41 @@ export default function UsersPage() {
       {/* Role legend */}
       <div className="bg-dark-800 border border-dark-700 rounded-2xl p-5">
         <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-          <ShieldCheck size={14} /> Keterangan Role & Hak Akses
+          <ShieldCheck size={14} /> Role Descriptions & Access Rights
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
           {[
             {
               role: 'president',
-              desc: 'Pimpinan tertinggi. Lihat semua data, biaya, arsip, tambah diskusi.',
+              desc: 'Top executive. View all data, costs, archive, add discussions.',
             },
             {
               role: 'vice_president',
-              desc: 'Wakil pimpinan. Lihat semua data, biaya, arsip, tambah diskusi.',
+              desc: 'Deputy executive. View all data, costs, archive, add discussions.',
             },
             {
               role: 'general_manager',
-              desc: 'Buat/edit temuan, kelola biaya & arsip, upload guideline.',
+              desc: 'Create/edit findings, manage costs & archive, upload guidelines.',
             },
             {
               role: 'manager',
-              desc: 'Buat/edit temuan, kelola biaya, upload guideline, lihat arsip.',
+              desc: 'Create/edit findings, manage costs, upload guidelines, view archive.',
             },
             {
               role: 'supervisor',
-              desc: 'Buat/edit temuan, lihat biaya & arsip, tambah diskusi.',
+              desc: 'Create/edit findings, view costs & archive, add discussions.',
             },
             {
               role: 'staff',
-              desc: 'Buat temuan, tambah diskusi. Tidak dapat edit atau hapus.',
+              desc: 'Create findings, add discussions. Cannot edit or delete.',
             },
             {
               role: 'viewer',
-              desc: 'Hanya membaca. Tidak dapat membuat atau mengubah apapun.',
+              desc: 'Read only. Cannot create or modify anything.',
             },
             {
               role: 'admin',
-              desc: 'Administrator sistem. Akses penuh termasuk kelola pengguna.',
+              desc: 'System administrator. Full access including user management.',
             },
           ].map(({ role, desc }) => {
             const info = ROLE_LABELS[role];

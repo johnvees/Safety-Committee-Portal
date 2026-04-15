@@ -44,9 +44,9 @@ export default function ArchivePage() {
     );
     try {
       await updateFinding(f.id, { ...f, checklist: cl });
-      showToast(`"${f.name}" dikembalikan`, 'info');
+      showToast(`"${f.name}" restored`, 'info');
     } catch {
-      showToast('Gagal', 'error');
+      showToast('Failed', 'error');
     }
   };
 
@@ -54,11 +54,10 @@ export default function ArchivePage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-extrabold text-gray-100 tracking-tight flex items-center gap-3">
-          <Archive size={28} className="text-emerald-400" /> Arsip Temuan
-          Selesai
+          <Archive size={28} className="text-emerald-400" /> Completed Findings Archive
         </h1>
         <p className="text-base text-gray-400 mt-1">
-          {archived.length} temuan ditampilkan
+          {archived.length} findings shown
         </p>
       </div>
 
@@ -70,7 +69,7 @@ export default function ArchivePage() {
           <Search size={20} className="text-gray-500 shrink-0" />
           <input
             className="bg-transparent border-none outline-none text-base text-gray-200 w-full placeholder-gray-500"
-            placeholder="Cari arsip..."
+            placeholder="Search archive..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -88,9 +87,9 @@ export default function ArchivePage() {
       {archived.length === 0 && (
         <div className="text-center py-24 text-gray-500">
           <CheckCircle2 size={56} className="mx-auto mb-4 opacity-25" />
-          <p className="text-lg">Belum ada temuan selesai.</p>
+          <p className="text-lg">No completed findings yet.</p>
           <p className="text-base text-gray-600 mt-1">
-            Temuan otomatis masuk arsip saat semua checklist dicentang.
+            Findings automatically move to archive when all checklist items are checked.
           </p>
         </div>
       )}
@@ -133,7 +132,7 @@ export default function ArchivePage() {
                       {pri?.label}
                     </span>
                     <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-400">
-                      <CheckCircle2 size={12} /> Selesai
+                      <CheckCircle2 size={12} /> Completed
                     </span>
                   </div>
                 </div>
@@ -150,16 +149,16 @@ export default function ArchivePage() {
                   </div>
                 )}
                 <div className="flex items-center gap-2">
-                  <Calendar size={16} /> Dibuat: {formatDate(f.createdAt)} —
+                  <Calendar size={16} /> Created: {formatDate(f.createdAt)} —
                   Deadline: {formatDate(f.deadline)}
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle2 size={16} className="text-emerald-400" />{' '}
-                  {(f.checklist || []).length} checklist selesai
+                  {(f.checklist || []).length} checklist completed
                 </div>
                 {(f.discussions || []).length > 0 && (
                   <div className="flex items-center gap-2">
-                    <MessageCircle size={16} /> {f.discussions.length} diskusi
+                    <MessageCircle size={16} /> {f.discussions.length} discussions
                   </div>
                 )}
                 {f.costRequired && (
@@ -167,14 +166,14 @@ export default function ArchivePage() {
                     <DollarSign size={16} className="text-amber-400" /> Est:{' '}
                     {formatCurrency(f.estimatedCost)}{' '}
                     {f.actualCost
-                      ? `| Aktual: ${formatCurrency(f.actualCost)}`
+                      ? `| Actual: ${formatCurrency(f.actualCost)}`
                       : ''}
                   </div>
                 )}
                 {f.guideline && (
                   <div className="flex items-center gap-2">
                     <BookOpen size={16} className="text-indigo-400" /> Guideline
-                    tersedia
+                    available
                   </div>
                 )}
               </div>
@@ -184,13 +183,13 @@ export default function ArchivePage() {
                   to={`/findings/${f.id}`}
                   className="flex-1 flex items-center justify-center gap-2 text-base font-bold text-indigo-400 border border-indigo-500/20 rounded-xl py-3.5 hover:bg-indigo-500/10 transition"
                 >
-                  <ArrowRight size={18} /> Lihat Detail
+                  <ArrowRight size={18} /> View Detail
                 </Link>
                 <button
                   onClick={() => restore(f)}
                   className="flex-1 flex items-center justify-center gap-2 text-base font-bold text-amber-400 border border-amber-500/20 rounded-xl py-3.5 hover:bg-amber-500/10 transition"
                 >
-                  <RotateCcw size={18} /> Kembalikan
+                  <RotateCcw size={18} /> Restore
                 </button>
               </div>
             </div>

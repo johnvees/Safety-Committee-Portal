@@ -7,13 +7,13 @@ import {
 } from 'lucide-react';
 
 const SCOPES = [
-  { value: 'national', label: 'Nasional', icon: Flag, color: '#f59e0b' },
-  { value: 'international', label: 'Internasional', icon: Globe, color: '#6366f1' },
+  { value: 'national', label: 'National', icon: Flag, color: '#f59e0b' },
+  { value: 'international', label: 'International', icon: Globe, color: '#6366f1' },
 ];
 
 const DOC_CATEGORIES = [
   ...FINDING_TYPES.map(t => ({ value: t.value, label: t.short, color: t.color, icon: t.icon })),
-  { value: 'general', label: 'Umum', color: '#6b7280', icon: BookOpen },
+  { value: 'general', label: 'General', color: '#6b7280', icon: BookOpen },
 ];
 
 const emptyDoc = { title: '', description: '', scope: 'national', category: 'safety', fileName: '', fileUrl: '', fileType: '' };
@@ -134,17 +134,17 @@ export default function GuidelinesPage() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-3xl font-extrabold text-gray-100 tracking-tight flex items-center gap-3">
-            <BookOpen size={28} className="text-indigo-400" /> Dokumen Guideline
+            <BookOpen size={28} className="text-indigo-400" /> Guideline Documents
           </h1>
           <p className="text-base text-gray-400 mt-1">
-            Kumpulkan regulasi, standar, dan panduan keselamatan nasional maupun internasional.
+            Collect regulations, standards, and safety guidelines — national and international.
           </p>
         </div>
         <button
           onClick={() => { setForm(emptyDoc); setShowModal(true); }}
           className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-6 h-12 rounded-xl text-base font-bold flex items-center gap-2 hover:opacity-90 transition shadow-lg"
         >
-          <Plus size={20} /> Tambah Dokumen
+          <Plus size={20} /> Add Document
         </button>
       </div>
 
@@ -154,7 +154,7 @@ export default function GuidelinesPage() {
           <Search size={17} className="text-gray-500 shrink-0" />
           <input
             className="bg-transparent border-none outline-none text-sm text-gray-200 w-full placeholder-gray-500"
-            placeholder="Cari dokumen..."
+            placeholder="Search documents..."
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -168,7 +168,7 @@ export default function GuidelinesPage() {
             value={filterScope}
             onChange={e => setFilterScope(e.target.value)}
           >
-            <option value="">Semua Scope</option>
+            <option value="">All Scopes</option>
             {SCOPES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
           <select
@@ -176,7 +176,7 @@ export default function GuidelinesPage() {
             value={filterCategory}
             onChange={e => setFilterCategory(e.target.value)}
           >
-            <option value="">Semua Kategori</option>
+            <option value="">All Categories</option>
             {DOC_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
           </select>
         </div>
@@ -187,7 +187,7 @@ export default function GuidelinesPage() {
         <div className="bg-dark-800 border border-dark-700 rounded-2xl p-5 relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-500" />
           <p className="text-2xl font-extrabold text-gray-100">{docs.length}</p>
-          <p className="text-sm text-gray-400 uppercase tracking-wider mt-1 font-semibold">Total Dokumen</p>
+          <p className="text-sm text-gray-400 uppercase tracking-wider mt-1 font-semibold">Total Documents</p>
         </div>
         {SCOPES.map(s => (
           <div key={s.value} className="bg-dark-800 border border-dark-700 rounded-2xl p-5 relative overflow-hidden">
@@ -199,18 +199,18 @@ export default function GuidelinesPage() {
         <div className="bg-dark-800 border border-dark-700 rounded-2xl p-5 relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500" />
           <p className="text-2xl font-extrabold text-gray-100">{DOC_CATEGORIES.filter(c => docs.some(d => d.category === c.value)).length}</p>
-          <p className="text-sm text-gray-400 uppercase tracking-wider mt-1 font-semibold">Kategori Aktif</p>
+          <p className="text-sm text-gray-400 uppercase tracking-wider mt-1 font-semibold">Active Categories</p>
         </div>
       </div>
 
       {/* Document groups */}
       {loading ? (
-        <div className="text-center py-20 text-gray-500">Memuat dokumen...</div>
+        <div className="text-center py-20 text-gray-500">Loading documents...</div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-20 text-gray-500">
           <BookOpen size={52} className="mx-auto mb-4 opacity-25" />
-          <p className="text-lg">{docs.length === 0 ? 'Belum ada dokumen guideline.' : 'Tidak ada dokumen yang cocok.'}</p>
-          {docs.length === 0 && <p className="text-base text-gray-600 mt-1">Klik "Tambah Dokumen" untuk memulai.</p>}
+          <p className="text-lg">{docs.length === 0 ? 'No guideline documents yet.' : 'No matching documents found.'}</p>
+          {docs.length === 0 && <p className="text-base text-gray-600 mt-1">Click "Add Document" to get started.</p>}
         </div>
       ) : (
         <div className="space-y-6">
@@ -231,7 +231,7 @@ export default function GuidelinesPage() {
                     <ScopeIcon size={13} /> {scope?.label}
                   </span>
                   <span className="ml-auto text-sm text-gray-500 bg-dark-700 px-3 py-1 rounded-full font-semibold">
-                    {items.length} dokumen
+                    {items.length} documents
                   </span>
                 </div>
                 <div className="divide-y divide-dark-700">
@@ -244,7 +244,7 @@ export default function GuidelinesPage() {
                       <div className="flex-1 min-w-0">
                         <p className="text-base font-semibold text-gray-200 truncate">{doc.title}</p>
                         {doc.description && <p className="text-sm text-gray-500 mt-0.5 truncate">{doc.description}</p>}
-                        <p className="text-xs text-gray-600 mt-0.5">{doc.fileName} · {new Date(doc.uploadedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                        <p className="text-xs text-gray-600 mt-0.5">{doc.fileName} · {new Date(doc.uploadedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <button
@@ -252,12 +252,12 @@ export default function GuidelinesPage() {
                           disabled={opening === doc.id}
                           className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition disabled:opacity-60"
                           style={{ background: cat?.color + '15', color: cat?.color }}
-                          title={isPdf(doc) ? 'Buka PDF' : 'Download'}
+                          title={isPdf(doc) ? 'Open PDF' : 'Download'}
                         >
                           {opening === doc.id ? (
                             <svg className="animate-spin" width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><circle cx="12" cy="12" r="10" strokeOpacity=".25"/><path d="M12 2a10 10 0 0 1 10 10" /></svg>
                           ) : isPdf(doc) ? <Eye size={15} /> : <Download size={15} />}
-                          {opening === doc.id ? 'Memuat...' : isPdf(doc) ? 'Buka' : 'Download'}
+                          {opening === doc.id ? 'Loading...' : isPdf(doc) ? 'Open' : 'Download'}
                         </button>
                         <button
                           onClick={() => setDeleteConfirm(doc)}
@@ -281,7 +281,7 @@ export default function GuidelinesPage() {
           <div className="bg-dark-800 border border-dark-700 rounded-2xl w-full max-w-lg shadow-2xl">
             <div className="flex items-center justify-between px-6 py-5 border-b border-dark-700">
               <h2 className="text-xl font-extrabold text-gray-100 flex items-center gap-2">
-                <BookOpen size={20} className="text-indigo-400" /> Tambah Dokumen
+                <BookOpen size={20} className="text-indigo-400" /> Add Document
               </h2>
               <button onClick={() => setShowModal(false)} className="text-gray-500 hover:text-gray-200 transition">
                 <X size={22} />
@@ -292,7 +292,7 @@ export default function GuidelinesPage() {
               {/* File Upload */}
               <div>
                 <label className="block text-sm font-bold text-gray-400 mb-2 flex items-center gap-2">
-                  <Upload size={15} /> File Dokumen <span className="text-red-400">*</span>
+                  <Upload size={15} /> Document File <span className="text-red-400">*</span>
                 </label>
                 <div
                   className={`border-2 border-dashed rounded-xl py-8 text-center cursor-pointer transition ${form.fileUrl ? 'border-indigo-500/50 bg-indigo-500/5' : 'border-dark-600 hover:border-indigo-500/30'}`}
@@ -302,12 +302,12 @@ export default function GuidelinesPage() {
                     <>
                       <FileText size={28} className="mx-auto mb-2 text-indigo-400" />
                       <p className="text-base font-semibold text-indigo-300">{form.fileName}</p>
-                      <p className="text-sm text-gray-500 mt-1">Klik untuk ganti file</p>
+                      <p className="text-sm text-gray-500 mt-1">Click to replace file</p>
                     </>
                   ) : (
                     <>
                       <Upload size={28} className="mx-auto mb-2 text-gray-500" />
-                      <p className="text-base text-gray-400">Klik untuk upload PDF atau dokumen lainnya</p>
+                      <p className="text-base text-gray-400">Click to upload PDF or other documents</p>
                       <p className="text-sm text-gray-600 mt-1">PDF, DOCX, XLSX, PNG, JPG</p>
                     </>
                   )}
@@ -317,7 +317,7 @@ export default function GuidelinesPage() {
 
               {/* Title */}
               <div>
-                <label className="block text-sm font-bold text-gray-400 mb-1.5">Judul <span className="text-red-400">*</span></label>
+                <label className="block text-sm font-bold text-gray-400 mb-1.5">Title <span className="text-red-400">*</span></label>
                 <input
                   className="w-full bg-dark-900 border border-dark-700 rounded-xl px-4 py-3 text-base text-gray-200 outline-none focus:border-indigo-500 transition placeholder-gray-600"
                   placeholder="Contoh: ISO 45001:2018, Permenaker No. 5/2018"
@@ -328,10 +328,10 @@ export default function GuidelinesPage() {
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-bold text-gray-400 mb-1.5">Deskripsi</label>
+                <label className="block text-sm font-bold text-gray-400 mb-1.5">Description</label>
                 <input
                   className="w-full bg-dark-900 border border-dark-700 rounded-xl px-4 py-3 text-base text-gray-200 outline-none focus:border-indigo-500 transition placeholder-gray-600"
-                  placeholder="Ringkasan singkat isi dokumen..."
+                  placeholder="Brief summary of document content..."
                   value={form.description}
                   onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
                 />
@@ -350,7 +350,7 @@ export default function GuidelinesPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-400 mb-1.5">Kategori</label>
+                  <label className="block text-sm font-bold text-gray-400 mb-1.5">Category</label>
                   <select
                     className="w-full bg-dark-900 border border-dark-700 rounded-xl px-4 py-3 text-base text-gray-200 outline-none focus:border-indigo-500 transition"
                     value={form.category}
@@ -363,13 +363,13 @@ export default function GuidelinesPage() {
             </div>
 
             <div className="px-6 py-4 border-t border-dark-700 flex justify-end gap-3">
-              <button onClick={() => setShowModal(false)} className="px-5 py-2.5 rounded-xl text-base text-gray-400 hover:text-gray-200 transition">Batal</button>
+              <button onClick={() => setShowModal(false)} className="px-5 py-2.5 rounded-xl text-base text-gray-400 hover:text-gray-200 transition">Cancel</button>
               <button
                 onClick={save}
                 disabled={saving || !form.title.trim() || !form.fileUrl}
                 className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-6 py-2.5 rounded-xl text-base font-bold hover:opacity-90 transition disabled:opacity-40"
               >
-                {saving ? 'Menyimpan...' : 'Simpan'}
+                {saving ? 'Saving...' : 'Save'}
               </button>
             </div>
           </div>
@@ -385,13 +385,13 @@ export default function GuidelinesPage() {
                 <Trash2 size={22} className="text-red-400" />
               </div>
               <div>
-                <p className="text-base font-bold text-gray-100">Hapus Dokumen?</p>
-                <p className="text-sm text-gray-400 mt-0.5">"{deleteConfirm.title}" akan dihapus permanen.</p>
+                <p className="text-base font-bold text-gray-100">Delete Document?</p>
+                <p className="text-sm text-gray-400 mt-0.5">"{deleteConfirm.title}" will be permanently deleted.</p>
               </div>
             </div>
             <div className="flex gap-3 justify-end pt-1">
-              <button onClick={() => setDeleteConfirm(null)} className="px-4 py-2.5 rounded-xl text-base text-gray-400 hover:text-gray-200 transition">Batal</button>
-              <button onClick={() => remove(deleteConfirm.id)} className="bg-red-500 text-white px-5 py-2.5 rounded-xl text-base font-bold hover:bg-red-600 transition">Hapus</button>
+              <button onClick={() => setDeleteConfirm(null)} className="px-4 py-2.5 rounded-xl text-base text-gray-400 hover:text-gray-200 transition">Cancel</button>
+              <button onClick={() => remove(deleteConfirm.id)} className="bg-red-500 text-white px-5 py-2.5 rounded-xl text-base font-bold hover:bg-red-600 transition">Delete</button>
             </div>
           </div>
         </div>

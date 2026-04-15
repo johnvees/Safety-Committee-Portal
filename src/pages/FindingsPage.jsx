@@ -67,7 +67,7 @@ export default function FindingsPage() {
   const handlePhoto = (e) => { Array.from(e.target.files||[]).forEach(file=>{const r=new FileReader();r.onload=(ev)=>setForm(p=>({...p,photos:[...p.photos,{id:Date.now()+Math.random(),url:ev.target.result,name:file.name,uploadedAt:new Date().toISOString(),uploadedBy:user?.name||''}]}));r.readAsDataURL(file)}); e.target.value='' }
 
   const doSave = async (payload) => {
-    if(editId) { const ex=findings.find(f=>f.id===editId); await updateFinding(editId,{...ex,...payload,id:editId}); showToast('Temuan berhasil diperbarui!','success') }
+    if(editId) { const ex=findings.find(f=>f.id===editId); await updateFinding(editId,{...ex,...payload,id:editId}); showToast('Finding updated successfully!','success') }
     else { await createFinding(payload) }
     setShowModal(false); resetForm()
   }
@@ -82,25 +82,25 @@ export default function FindingsPage() {
       setArchiveConfirm({ name: payload.name, onConfirm: () => doSave(payload) })
       return
     }
-    try { await doSave(payload) } catch { showToast('Gagal menyimpan.','error') } finally { setSaving(false) }
+    try { await doSave(payload) } catch { showToast('Failed to save.','error') } finally { setSaving(false) }
   }
   const handleDelete = (id, name) => setDeleteTarget({ id, name })
   const confirmDelete = async () => {
     if (!deleteTarget) return
     setDeleteLoading(true)
-    try { await deleteFinding(deleteTarget.id) } catch { showToast('Gagal.','error') } finally { setDeleteLoading(false); setDeleteTarget(null) }
+    try { await deleteFinding(deleteTarget.id) } catch { showToast('Failed.','error') } finally { setDeleteLoading(false); setDeleteTarget(null) }
   }
   const toggleCheck = async (finding, checkId) => {
     const cl=finding.checklist.map(c=>c.id===checkId?{...c,done:!c.done}:c); const willDone=cl.length>0&&cl.every(c=>c.done)
     if(willDone) {
-      setArchiveConfirm({ name: finding.name, onConfirm: async () => { await updateFinding(finding.id,{...finding,checklist:cl}); showToast(`"${finding.name}" selesai → Arsip`,'success') } })
+      setArchiveConfirm({ name: finding.name, onConfirm: async () => { await updateFinding(finding.id,{...finding,checklist:cl}); showToast(`"${finding.name}" completed → Archived`,'success') } })
       return
     }
-    try { await updateFinding(finding.id,{...finding,checklist:cl}) } catch { showToast('Gagal','error') }
+    try { await updateFinding(finding.id,{...finding,checklist:cl}) } catch { showToast('Failed','error') }
   }
   const confirmArchive = async () => {
     if(!archiveConfirm) return
-    try { await archiveConfirm.onConfirm() } catch { showToast('Gagal','error') }
+    try { await archiveConfirm.onConfirm() } catch { showToast('Failed','error') }
     setArchiveConfirm(null)
   }
   // ── Input style (reusable) ──
@@ -111,17 +111,17 @@ export default function FindingsPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-100 tracking-tight">Temuan Aktif</h1>
-          <p className="text-base text-gray-400 mt-1">{filtered.length} temuan ditampilkan</p>
+          <h1 className="text-3xl font-extrabold text-gray-100 tracking-tight">Active Findings</h1>
+          <p className="text-base text-gray-400 mt-1">{filtered.length} findings shown</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-2 bg-dark-900 border border-dark-700 rounded-xl px-4 h-12 focus-within:border-indigo-500 transition w-64">
             <Search size={18} className="text-gray-500 shrink-0" />
-            <input className="bg-transparent border-none outline-none text-sm text-gray-200 w-full placeholder-gray-500" placeholder="Cari temuan..." value={search} onChange={e=>setSearch(e.target.value)} />
+            <input className="bg-transparent border-none outline-none text-sm text-gray-200 w-full placeholder-gray-500" placeholder="Search findings..." value={search} onChange={e=>setSearch(e.target.value)} />
             {search && <button onClick={()=>setSearch('')} className="text-gray-400 hover:text-gray-200"><X size={16} /></button>}
           </div>
           <button onClick={openNew} className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-6 h-12 rounded-xl text-base font-bold flex items-center gap-2 shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition active:scale-95">
-            <Plus size={20} /> Tambah Temuan
+            <Plus size={20} /> Add Finding
           </button>
         </div>
       </div>
@@ -133,18 +133,18 @@ export default function FindingsPage() {
 
       {/* Filters */}
       <div className="flex items-center gap-2 flex-wrap">
-        <button onClick={()=>setFilterType('')} className={`px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition ${filterType===''?'bg-indigo-500/20 text-indigo-300':'bg-dark-800 text-gray-400 hover:text-gray-200'}`}><Filter size={16} /> Semua</button>
+        <button onClick={()=>setFilterType('')} className={`px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition ${filterType===''?'bg-indigo-500/20 text-indigo-300':'bg-dark-800 text-gray-400 hover:text-gray-200'}`}><Filter size={16} /> All</button>
         {FINDING_TYPES.map(t=>{const Icon=t.icon;return(
           <button key={t.value} onClick={()=>setFilterType(t.value)} className={`px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition ${filterType===t.value?'':'bg-dark-800 text-gray-400 hover:text-gray-200'}`} style={filterType===t.value?{background:t.color+'22',color:t.color}:{}}><Icon size={16} /> {t.short}</button>
         )})}
       </div>
 
-      {loading && <div className="flex items-center justify-center py-20 text-gray-400 text-lg"><Loader2 size={28} className="animate-spin mr-3" /> Memuat...</div>}
+      {loading && <div className="flex items-center justify-center py-20 text-gray-400 text-lg"><Loader2 size={28} className="animate-spin mr-3" /> Loading...</div>}
       {!loading && filtered.length===0 && (
         <div className="text-center py-20 text-gray-500">
           <List size={56} className="mx-auto mb-4 opacity-40" />
-          <p className="text-lg">Belum ada temuan aktif.</p>
-          <button onClick={openNew} className="mt-4 text-indigo-400 text-base font-semibold flex items-center gap-2 mx-auto hover:text-indigo-300"><Plus size={18} /> Tambah Baru</button>
+          <p className="text-lg">No active findings yet.</p>
+          <button onClick={openNew} className="mt-4 text-indigo-400 text-base font-semibold flex items-center gap-2 mx-auto hover:text-indigo-300"><Plus size={18} /> Add New</button>
         </div>
       )}
 
@@ -189,7 +189,7 @@ export default function FindingsPage() {
               </div>
               <div className={`flex items-center gap-2 text-sm shrink-0 font-semibold ${od?'text-red-400':'text-gray-400'}`}>
                 {od?<Clock size={18} />:<Calendar size={18} />}
-                <span>{!f.deadline?'-':od?`Overdue ${Math.abs(days)}h`:days===0?'Hari ini':`${days}h lagi`}</span>
+                <span>{!f.deadline?'-':od?`Overdue ${Math.abs(days)}d`:days===0?'Today':`${days}d left`}</span>
               </div>
             </div>
 
@@ -209,7 +209,7 @@ export default function FindingsPage() {
             {/* Follow-up */}
             {(f.followUps||[]).length>0 && (()=>{const fu=f.followUps[f.followUps.length-1];return(
               <div className="mb-4 px-4 py-3 bg-dark-800/50 border border-dark-700 rounded-xl">
-                <p className="text-xs text-gray-500 uppercase tracking-wider font-bold mb-2 flex items-center gap-1.5"><History size={14} /> Follow-up Terakhir</p>
+                <p className="text-xs text-gray-500 uppercase tracking-wider font-bold mb-2 flex items-center gap-1.5"><History size={14} /> Latest Follow-up</p>
                 <p className="text-base text-gray-400"><span className="text-gray-200 font-semibold">{fu.by}</span> — {fu.note}</p>
                 <p className="text-xs text-gray-500 mt-1">{formatDateTime(fu.date)}</p>
               </div>
@@ -225,7 +225,7 @@ export default function FindingsPage() {
             {/* Actions */}
             <div className="flex items-center justify-between pt-4 mt-2">
               <div className="flex flex-col gap-0.5">
-                <Link to={`/findings/${f.id}`} className="text-sm text-gray-500 hover:text-indigo-400 flex items-center gap-1.5 transition font-medium">Lihat Detail <ArrowRight size={16} /></Link>
+                <Link to={`/findings/${f.id}`} className="text-sm text-gray-500 hover:text-indigo-400 flex items-center gap-1.5 transition font-medium">View Detail <ArrowRight size={16} /></Link>
                 {f.createdAt && <span className="text-xs text-gray-600">{formatDateTime(f.createdAt)}</span>}
               </div>
               <div className="flex gap-2">
@@ -246,17 +246,17 @@ export default function FindingsPage() {
                 <Trash2 size={26} className="text-red-400" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-gray-100">Hapus Temuan</h3>
-                <p className="text-sm text-gray-400 mt-0.5">Tindakan ini tidak dapat dibatalkan</p>
+                <h3 className="text-lg font-bold text-gray-100">Delete Finding</h3>
+                <p className="text-sm text-gray-400 mt-0.5">This action cannot be undone</p>
               </div>
             </div>
-            <p className="text-base text-gray-300 mb-1">Yakin ingin menghapus temuan <span className="font-bold text-gray-100">"{deleteTarget.name}"</span>?</p>
-            <p className="text-sm text-gray-500 mb-6">Semua data termasuk foto, checklist, dan diskusi akan ikut terhapus secara permanen.</p>
+            <p className="text-base text-gray-300 mb-1">Are you sure you want to delete finding <span className="font-bold text-gray-100">"{deleteTarget.name}"</span>?</p>
+            <p className="text-sm text-gray-500 mb-6">All data including photos, checklist, and discussions will be permanently deleted.</p>
             <div className="flex gap-3 justify-end">
-              <button onClick={() => setDeleteTarget(null)} className="px-5 py-2.5 rounded-xl border border-dark-600 text-gray-400 text-sm font-bold hover:bg-dark-700 transition">Batal</button>
+              <button onClick={() => setDeleteTarget(null)} className="px-5 py-2.5 rounded-xl border border-dark-600 text-gray-400 text-sm font-bold hover:bg-dark-700 transition">Cancel</button>
               <button onClick={confirmDelete} disabled={deleteLoading} className="px-6 py-2.5 rounded-xl bg-red-500 hover:bg-red-400 disabled:opacity-60 text-white text-sm font-bold flex items-center gap-2 transition">
                 {deleteLoading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Trash2 size={15} />}
-                Ya, Hapus
+                Yes, Delete
               </button>
             </div>
           </div>
@@ -272,16 +272,16 @@ export default function FindingsPage() {
                 <Check size={28} className="text-emerald-400" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-gray-100">Konfirmasi Arsip</h3>
-                <p className="text-sm text-gray-400 mt-0.5">Semua checklist telah selesai</p>
+                <h3 className="text-lg font-bold text-gray-100">Confirm Archive</h3>
+                <p className="text-sm text-gray-400 mt-0.5">All checklist items completed</p>
               </div>
             </div>
-            <p className="text-base text-gray-300 mb-1">Temuan <span className="font-bold text-gray-100">"{archiveConfirm.name}"</span> akan ditandai selesai dan dipindahkan ke arsip.</p>
-            <p className="text-sm text-gray-500 mb-6">Tindakan ini tidak dapat dibatalkan. Pastikan semua pekerjaan sudah benar-benar selesai sebelum melanjutkan.</p>
+            <p className="text-base text-gray-300 mb-1">Finding <span className="font-bold text-gray-100">"{archiveConfirm.name}"</span> will be marked as completed and moved to archive.</p>
+            <p className="text-sm text-gray-500 mb-6">This action cannot be undone. Make sure all work is truly complete before proceeding.</p>
             <div className="flex gap-3 justify-end">
-              <button onClick={()=>setArchiveConfirm(null)} className="px-5 py-2.5 rounded-xl border border-dark-600 text-gray-400 text-sm font-bold hover:bg-dark-700 transition">Batal</button>
+              <button onClick={()=>setArchiveConfirm(null)} className="px-5 py-2.5 rounded-xl border border-dark-600 text-gray-400 text-sm font-bold hover:bg-dark-700 transition">Cancel</button>
               <button onClick={confirmArchive} className="px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-bold flex items-center gap-2 transition">
-                <Check size={16} /> Ya, Arsipkan
+                <Check size={16} /> Yes, Archive
               </button>
             </div>
           </div>
@@ -301,36 +301,36 @@ export default function FindingsPage() {
         <div className="fixed inset-0 bg-black/70 z-[1000] flex items-center justify-center p-4" onClick={()=>setShowModal(false)}>
           <div className="bg-dark-800 rounded-2xl p-7 w-full max-w-3xl max-h-[92vh] overflow-y-auto border border-dark-700 shadow-2xl" onClick={e=>e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-100 flex items-center gap-3"><Paperclip size={22} className="text-indigo-400" /> {editId?'Edit Temuan':'Tambah Temuan Baru'}</h2>
+              <h2 className="text-xl font-bold text-gray-100 flex items-center gap-3"><Paperclip size={22} className="text-indigo-400" /> {editId?'Edit Finding':'Add New Finding'}</h2>
               <button onClick={()=>setShowModal(false)} className="text-gray-400 hover:text-gray-200 p-2"><X size={22} /></button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
-                <label className="block text-sm font-bold text-gray-400 mb-2">Nama Temuan *</label>
-                <input className={inp} placeholder="Contoh: Kebocoran pipa produksi" value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))} />
+                <label className="block text-sm font-bold text-gray-400 mb-2">Finding Name *</label>
+                <input className={inp} placeholder="e.g. Production pipe leak" value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))} />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-400 mb-2">Jenis *</label>
+                <label className="block text-sm font-bold text-gray-400 mb-2">Type *</label>
                 <select className={inp+" appearance-none cursor-pointer"} value={form.type} onChange={e=>setForm(p=>({...p,type:e.target.value}))}>
-                  <option value="">-- Pilih --</option>
+                  <option value="">-- Select --</option>
                   {FINDING_TYPES.map(t=><option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-400 mb-2">Area / Lokasi</label>
+                <label className="block text-sm font-bold text-gray-400 mb-2">Area / Location</label>
                 <input className={inp} placeholder="Produksi Lt.2" value={form.area} onChange={e=>setForm(p=>({...p,area:e.target.value}))} />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-400 mb-2">Dilaporkan oleh</label>
-                <input className={inp} placeholder="Nama pelapor" value={form.reportedBy} onChange={e=>setForm(p=>({...p,reportedBy:e.target.value}))} />
+                <label className="block text-sm font-bold text-gray-400 mb-2">Reported by</label>
+                <input className={inp} placeholder="Reporter name" value={form.reportedBy} onChange={e=>setForm(p=>({...p,reportedBy:e.target.value}))} />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-400 mb-2">Ditugaskan ke</label>
-                <input className={inp} placeholder="Tim / PIC" value={form.assignedTo} onChange={e=>setForm(p=>({...p,assignedTo:e.target.value}))} />
+                <label className="block text-sm font-bold text-gray-400 mb-2">Assigned to</label>
+                <input className={inp} placeholder="Team / PIC" value={form.assignedTo} onChange={e=>setForm(p=>({...p,assignedTo:e.target.value}))} />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-400 mb-2">Prioritas</label>
+                <label className="block text-sm font-bold text-gray-400 mb-2">Priority</label>
                 <div className="flex gap-2">
                   {PRIORITY_LEVELS.map(p=>(
                     <button key={p.value} onClick={()=>setForm(prev=>({...prev,priority:p.value}))} className="flex-1 py-3 rounded-xl text-sm font-bold transition"
@@ -339,7 +339,7 @@ export default function FindingsPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-400 mb-2 flex items-center gap-2"><Calendar size={16} /> Tanggal Temuan</label>
+                <label className="block text-sm font-bold text-gray-400 mb-2 flex items-center gap-2"><Calendar size={16} /> Finding Date</label>
                 <input type="date" className={inp} value={form.findingDate} onChange={e=>setForm(p=>({...p,findingDate:e.target.value}))} />
               </div>
               <div>
@@ -347,17 +347,17 @@ export default function FindingsPage() {
                 <input type="date" className={inp} value={form.deadline} onChange={e=>setForm(p=>({...p,deadline:e.target.value}))} />
               </div>
               <div className="md:col-span-3">
-                <label className="block text-sm font-bold text-gray-400 mb-2">Deskripsi</label>
-                <textarea className={inp+" resize-y min-h-[90px]"} placeholder="Jelaskan detail temuan..." value={form.description} onChange={e=>setForm(p=>({...p,description:e.target.value}))} />
+                <label className="block text-sm font-bold text-gray-400 mb-2">Description</label>
+                <textarea className={inp+" resize-y min-h-[90px]"} placeholder="Describe the finding in detail..." value={form.description} onChange={e=>setForm(p=>({...p,description:e.target.value}))} />
               </div>
             </div>
 
             {/* Cost */}
             <div className="mt-5 p-5 bg-dark-900 border border-dark-700 rounded-xl">
               <div className="flex items-center justify-between mb-4">
-                <label className="text-base font-bold text-gray-300 flex items-center gap-2"><DollarSign size={18} /> Biaya Perbaikan</label>
+                <label className="text-base font-bold text-gray-300 flex items-center gap-2"><DollarSign size={18} /> Repair Cost</label>
                 <label className="flex items-center gap-3 cursor-pointer">
-                  <span className="text-sm text-gray-400">Ada biaya?</span>
+                  <span className="text-sm text-gray-400">Has cost?</span>
                   <div onClick={()=>setForm(p=>({...p,costRequired:!p.costRequired}))} className={`w-12 h-7 rounded-full transition cursor-pointer flex items-center ${form.costRequired?'bg-indigo-500 justify-end':'bg-dark-600 justify-start'}`}>
                     <div className="w-5 h-5 bg-white rounded-full mx-1" />
                   </div>
@@ -368,15 +368,15 @@ export default function FindingsPage() {
 
                   {/* ── Estimasi ── */}
                   <div className="space-y-2">
-                    <p className="text-sm font-bold text-amber-400 uppercase tracking-wider">Biaya Estimasi</p>
+                    <p className="text-sm font-bold text-amber-400 uppercase tracking-wider">Estimated Cost</p>
                     {form.costItems.length>0 && (
                       <div className="rounded-xl border border-dark-700 overflow-hidden">
                         <table className="w-full text-sm">
                           <thead><tr className="bg-dark-800 border-b border-dark-700 text-xs text-gray-500 uppercase tracking-wider">
-                            <th className="px-4 py-2.5 text-left font-bold">Nama Item</th>
+                            <th className="px-4 py-2.5 text-left font-bold">Item Name</th>
                             <th className="px-3 py-2.5 text-left font-bold">SKU</th>
                             <th className="px-3 py-2.5 text-center font-bold w-16">Qty</th>
-                            <th className="px-3 py-2.5 text-right font-bold">Harga Satuan</th>
+                            <th className="px-3 py-2.5 text-right font-bold">Unit Price</th>
                             <th className="px-3 py-2.5 text-right font-bold">Total</th>
                             <th className="px-3 py-2.5 w-8"></th>
                           </tr></thead>
@@ -391,7 +391,7 @@ export default function FindingsPage() {
                             </tr>
                           ))}</tbody>
                           <tfoot><tr className="bg-dark-800/60 border-t-2 border-dark-600">
-                            <td colSpan={4} className="px-4 py-3 text-sm font-extrabold text-gray-400 uppercase tracking-wider">Total Estimasi</td>
+                            <td colSpan={4} className="px-4 py-3 text-sm font-extrabold text-gray-400 uppercase tracking-wider">Total Estimate</td>
                             <td className="px-3 py-3 text-right font-extrabold font-mono text-amber-400">{formatCurrency(form.costItems.reduce((s,c)=>s+(c.totalCost||0),0))}</td>
                             <td></td>
                           </tr></tfoot>
@@ -403,22 +403,22 @@ export default function FindingsPage() {
                       <input className={inp} placeholder="SKU (opsional)" value={newCostItem.sku} onChange={e=>setNewCostItem(p=>({...p,sku:e.target.value}))} onKeyDown={e=>e.key==='Enter'&&addCostItem()} />
                       <input type="number" className={inp} placeholder="Qty" value={newCostItem.qty} onChange={e=>setNewCostItem(p=>({...p,qty:e.target.value}))} onKeyDown={e=>e.key==='Enter'&&addCostItem()} />
                       <input type="number" className={inp} placeholder="Harga satuan (Rp)" value={newCostItem.unitCost} onChange={e=>setNewCostItem(p=>({...p,unitCost:e.target.value}))} onKeyDown={e=>e.key==='Enter'&&addCostItem()} />
-                      <button onClick={addCostItem} className="bg-amber-500/10 text-amber-300 px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-amber-500/20 whitespace-nowrap"><Plus size={16} /> Tambah</button>
+                      <button onClick={addCostItem} className="bg-amber-500/10 text-amber-300 px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-amber-500/20 whitespace-nowrap"><Plus size={16} /> Add</button>
                     </div>
                     {newCostItem.qty && newCostItem.unitCost && <p className="text-xs text-amber-400/70 px-1">= {formatCurrency(Number(newCostItem.qty)*Number(newCostItem.unitCost))}</p>}
                   </div>
 
                   {/* ── Aktual ── */}
                   {editId && <div className="space-y-2 pt-4 border-t border-dark-700">
-                    <p className="text-sm font-bold text-emerald-400 uppercase tracking-wider">Biaya Aktual <span className="text-gray-600 font-normal normal-case">(diisi setelah pekerjaan selesai)</span></p>
+                    <p className="text-sm font-bold text-emerald-400 uppercase tracking-wider">Actual Cost <span className="text-gray-600 font-normal normal-case">(fill in after work is completed)</span></p>
                     {form.actualCostItems.length>0 && (
                       <div className="rounded-xl border border-dark-700 overflow-hidden">
                         <table className="w-full text-sm">
                           <thead><tr className="bg-dark-800 border-b border-dark-700 text-xs text-gray-500 uppercase tracking-wider">
-                            <th className="px-4 py-2.5 text-left font-bold">Nama Item</th>
+                            <th className="px-4 py-2.5 text-left font-bold">Item Name</th>
                             <th className="px-3 py-2.5 text-left font-bold">SKU</th>
                             <th className="px-3 py-2.5 text-center font-bold w-16">Qty</th>
-                            <th className="px-3 py-2.5 text-right font-bold">Harga Satuan</th>
+                            <th className="px-3 py-2.5 text-right font-bold">Unit Price</th>
                             <th className="px-3 py-2.5 text-right font-bold">Total</th>
                             <th className="px-3 py-2.5 w-8"></th>
                           </tr></thead>
@@ -433,7 +433,7 @@ export default function FindingsPage() {
                             </tr>
                           ))}</tbody>
                           <tfoot><tr className="bg-dark-800/60 border-t-2 border-dark-600">
-                            <td colSpan={4} className="px-4 py-3 text-sm font-extrabold text-gray-400 uppercase tracking-wider">Total Aktual</td>
+                            <td colSpan={4} className="px-4 py-3 text-sm font-extrabold text-gray-400 uppercase tracking-wider">Total Actual</td>
                             <td className="px-3 py-3 text-right font-extrabold font-mono text-emerald-400">{formatCurrency(form.actualCostItems.reduce((s,c)=>s+(c.totalCost||0),0))}</td>
                             <td></td>
                           </tr></tfoot>
@@ -445,15 +445,15 @@ export default function FindingsPage() {
                       <input className={inp} placeholder="SKU (opsional)" value={newActualItem.sku} onChange={e=>setNewActualItem(p=>({...p,sku:e.target.value}))} onKeyDown={e=>e.key==='Enter'&&addActualCostItem()} />
                       <input type="number" className={inp} placeholder="Qty" value={newActualItem.qty} onChange={e=>setNewActualItem(p=>({...p,qty:e.target.value}))} onKeyDown={e=>e.key==='Enter'&&addActualCostItem()} />
                       <input type="number" className={inp} placeholder="Harga satuan (Rp)" value={newActualItem.unitCost} onChange={e=>setNewActualItem(p=>({...p,unitCost:e.target.value}))} onKeyDown={e=>e.key==='Enter'&&addActualCostItem()} />
-                      <button onClick={addActualCostItem} className="bg-emerald-500/10 text-emerald-300 px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-emerald-500/20 whitespace-nowrap"><Plus size={16} /> Tambah</button>
+                      <button onClick={addActualCostItem} className="bg-emerald-500/10 text-emerald-300 px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-emerald-500/20 whitespace-nowrap"><Plus size={16} /> Add</button>
                     </div>
                     {newActualItem.qty && newActualItem.unitCost && <p className="text-xs text-emerald-400/70 px-1">= {formatCurrency(Number(newActualItem.qty)*Number(newActualItem.unitCost))}</p>}
                   </div>}
 
                   {/* Notes */}
                   <div className="pt-2 border-t border-dark-700">
-                    <label className="text-sm text-gray-400 block mb-1">Catatan Biaya</label>
-                    <input className={inp} value={form.costNotes} onChange={e=>setForm(p=>({...p,costNotes:e.target.value}))} placeholder="Catatan tambahan" />
+                    <label className="text-sm text-gray-400 block mb-1">Cost Notes</label>
+                    <input className={inp} value={form.costNotes} onChange={e=>setForm(p=>({...p,costNotes:e.target.value}))} placeholder="Additional notes" />
                   </div>
 
                 </div>
@@ -465,7 +465,7 @@ export default function FindingsPage() {
               <label className="block text-sm font-bold text-gray-400 mb-2 flex items-center gap-2"><Camera size={16} /> Foto</label>
               <div className="border-2 border-dashed border-dark-700 rounded-xl py-7 text-center cursor-pointer hover:border-indigo-500/30 transition" onClick={()=>fileRef.current?.click()}>
                 <Camera size={28} className="mx-auto text-gray-500 mb-2" />
-                <p className="text-base text-gray-500">Klik untuk upload foto</p>
+                <p className="text-base text-gray-500">Click to upload photos</p>
                 <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handlePhoto} />
               </div>
               {form.photos.length>0 && <div className="flex gap-3 flex-wrap mt-3">{form.photos.map(p=>(<div key={p.id} className="relative group"><img src={p.url} alt="" className="w-20 h-20 rounded-xl object-cover border-2 border-dark-700" /><button onClick={()=>setForm(pr=>({...pr,photos:pr.photos.filter(x=>x.id!==p.id)}))} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><X size={12} /></button></div>))}</div>}
@@ -483,8 +483,8 @@ export default function FindingsPage() {
                 </div>
               ))}
               <div className="flex gap-2">
-                <input className={inp+" flex-1"} placeholder="Tambah checklist..." value={newCheck} onChange={e=>setNewCheck(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addCheckItem()} />
-                <button onClick={addCheckItem} className="bg-indigo-500/10 text-indigo-300 px-5 py-3 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-indigo-500/20"><Plus size={16} /> Tambah</button>
+                <input className={inp+" flex-1"} placeholder="Add checklist item..." value={newCheck} onChange={e=>setNewCheck(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addCheckItem()} />
+                <button onClick={addCheckItem} className="bg-indigo-500/10 text-indigo-300 px-5 py-3 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-indigo-500/20"><Plus size={16} /> Add</button>
               </div>
             </div>
 
@@ -500,18 +500,18 @@ export default function FindingsPage() {
                 </div>
               ))}
               <div className="flex gap-2">
-                <input className={inp+" flex-1"} placeholder="Catatan follow-up..." value={newFollowUp} onChange={e=>setNewFollowUp(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addFollowUpItem()} />
+                <input className={inp+" flex-1"} placeholder="Follow-up note..." value={newFollowUp} onChange={e=>setNewFollowUp(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addFollowUpItem()} />
                 <button onClick={addFollowUpItem} className="bg-indigo-500/10 text-indigo-300 px-5 py-3 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-indigo-500/20"><Plus size={16} /></button>
               </div>
             </div>
 
             {/* Save */}
             <div className="flex justify-end gap-3 mt-7 pt-5 border-t border-dark-700">
-              <button onClick={()=>setShowModal(false)} className="border border-dark-600 text-gray-400 px-6 py-3 rounded-xl text-base font-bold hover:bg-dark-700 transition">Batal</button>
+              <button onClick={()=>setShowModal(false)} className="border border-dark-600 text-gray-400 px-6 py-3 rounded-xl text-base font-bold hover:bg-dark-700 transition">Cancel</button>
               <button onClick={save} disabled={!form.name||!form.type||saving}
                 className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-8 py-3 rounded-xl text-base font-bold flex items-center gap-2 shadow-lg shadow-indigo-500/25 disabled:opacity-40 transition">
                 {saving?<Loader2 size={18} className="animate-spin" />:<Check size={18} />}
-                {editId?'Simpan':'Simpan Temuan'}
+                {editId?'Save':'Save Finding'}
               </button>
             </div>
           </div>

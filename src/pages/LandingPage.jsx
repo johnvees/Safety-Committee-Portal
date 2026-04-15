@@ -117,7 +117,7 @@ const TICKER = [
   'Safety First',
   'PT Charoen Pokphand Indonesia',
   'Zero Accident',
-  'K3 Terpadu',
+  'Integrated HSE',
   'Environmental Care',
   'ISO 45001',
   'Employee Wellbeing',
@@ -133,7 +133,7 @@ const STATS = [
   {
     target: 5,
     suffix: '',
-    label: 'Kategori Temuan',
+    label: 'Finding Categories',
     sub: 'Safety · Quality · Environment · Compliance · Operational',
     color: '#6366f1',
     icon: BarChart3,
@@ -141,16 +141,16 @@ const STATS = [
   {
     target: 8,
     suffix: '+',
-    label: 'Level Jabatan',
-    sub: 'Dari Staff hingga President dengan akses terstruktur',
+    label: 'Position Levels',
+    sub: 'From Staff to President with structured access',
     color: '#10b981',
     icon: Users,
   },
   {
     target: 6,
     suffix: '',
-    label: 'Modul Platform',
-    sub: 'Sistem manajemen K3 lengkap & terintegrasi',
+    label: 'Platform Modules',
+    sub: 'Complete & integrated HSE management system',
     color: '#f59e0b',
     icon: Building2,
   },
@@ -158,7 +158,7 @@ const STATS = [
     target: 24,
     suffix: '/7',
     label: 'Monitoring',
-    sub: 'Pantau temuan & notifikasi kapan saja dan di mana saja',
+    sub: 'Monitor findings & notifications anytime, anywhere',
     color: '#0ea5e9',
     icon: Activity,
   },
@@ -167,55 +167,55 @@ const STATS = [
 // ─── HSE Pillars ─────────────────────────────────────────
 const PILLARS = [
   {
-    title: 'Keselamatan Kerja',
+    title: 'Occupational Safety',
     en: 'Occupational Safety',
     color: '#ef4444',
     from: '#ef4444',
     to: '#f97316',
     Icon: Shield,
     BigIcon: HardHat,
-    desc: 'Perlindungan menyeluruh terhadap risiko kecelakaan kerja di seluruh area operasional pabrik PT Charoen Pokphand Indonesia.',
+    desc: 'Comprehensive protection against occupational accident risks across all operational areas of PT Charoen Pokphand Indonesia.',
     points: [
-      'Inspeksi rutin harian & mingguan',
-      'Identifikasi hazard & potensi bahaya',
-      'Pemantauan APD & compliance',
-      'Pengelolaan temuan lapangan real-time',
+      'Daily & weekly routine inspections',
+      'Hazard identification & potential risks',
+      'PPE & compliance monitoring',
+      'Real-time field findings management',
     ],
     badge: 'Zero Accident',
-    badgeSub: 'Target Utama',
+    badgeSub: 'Primary Target',
   },
   {
-    title: 'Kesehatan Lingkungan',
+    title: 'Environmental Health',
     en: 'Environmental Health',
     color: '#10b981',
     from: '#10b981',
     to: '#0ea5e9',
     Icon: Leaf,
     BigIcon: TreePine,
-    desc: 'Komitmen PT Charoen Pokphand Indonesia terhadap kelestarian lingkungan hidup dan pengelolaan limbah yang bertanggung jawab.',
+    desc: 'PT Charoen Pokphand Indonesia\'s commitment to environmental sustainability and responsible waste management.',
     points: [
-      'Pengelolaan limbah B3 & non-B3',
-      'Pemantauan kualitas udara & air',
-      'Program penghijauan & konservasi',
-      'Kepatuhan regulasi lingkungan KLHK',
+      'B3 & non-B3 waste management',
+      'Air & water quality monitoring',
+      'Greening & conservation programs',
+      'KLHK environmental regulation compliance',
     ],
     badge: 'ISO 14001',
     badgeSub: 'Environmental Standard',
   },
   {
-    title: 'Kesehatan Karyawan',
+    title: 'Employee Wellness',
     en: 'Employee Wellness',
     color: '#f43f5e',
     from: '#f43f5e',
     to: '#8b5cf6',
     Icon: Heart,
     BigIcon: Award,
-    desc: 'Program kesehatan komprehensif untuk memastikan kesejahteraan fisik dan mental seluruh karyawan PT Charoen Pokphand Indonesia.',
+    desc: 'Comprehensive health programs to ensure the physical and mental well-being of all PT Charoen Pokphand Indonesia employees.',
     points: [
-      'Medical check-up & pemeriksaan berkala',
-      'Program wellness & gizi kerja',
-      'Penanganan PAK (Penyakit Akibat Kerja)',
-      'Ergonomi & kenyamanan tempat kerja',
+      'Medical check-up & periodic examinations',
+      'Wellness & occupational nutrition programs',
+      'Occupational Disease (PAK) management',
+      'Ergonomics & workplace comfort',
     ],
     badge: 'K3 Excellence',
     badgeSub: 'Health Standard',
@@ -230,13 +230,13 @@ const MODULES = [
     color: '#6366f1',
     from: 'from-indigo-500',
     to: 'to-purple-500',
-    title: 'Manajemen Temuan',
+    title: 'Findings Management',
     en: 'Findings Management',
-    desc: 'Catat, pantau, dan tindak lanjuti temuan safety, quality, environment, compliance, dan operasional.',
+    desc: 'Record, monitor, and follow up on safety, quality, environment, compliance, and operational findings.',
     features: [
       'Tracking status & deadline',
-      'Notifikasi & eskalasi',
-      'Laporan biaya perbaikan',
+      'Notifications & escalation',
+      'Repair cost reporting',
     ],
     active: true,
   },
@@ -246,13 +246,13 @@ const MODULES = [
     color: '#ef4444',
     from: 'from-red-500',
     to: 'to-rose-500',
-    title: 'Laporan Insiden',
+    title: 'Incident Report',
     en: 'Incident Report',
-    desc: 'Laporkan dan investigasi insiden kecelakaan kerja, near-miss, dan kejadian berbahaya.',
+    desc: 'Report and investigate workplace accident incidents, near-misses, and dangerous events.',
     features: [
       'Root cause analysis',
-      'Tindakan korektif & preventif',
-      'Statistik insiden',
+      'Corrective & preventive actions',
+      'Incident statistics',
     ],
     active: false,
   },
@@ -262,10 +262,10 @@ const MODULES = [
     color: '#0ea5e9',
     from: 'from-sky-500',
     to: 'to-cyan-500',
-    title: 'Jadwal Inspeksi',
+    title: 'Safety Inspection',
     en: 'Safety Inspection',
-    desc: 'Kelola jadwal inspeksi rutin, audit K3, dan checklist digital yang dapat dikustomisasi.',
-    features: ['Checklist digital', 'Penjadwalan otomatis', 'Riwayat inspeksi'],
+    desc: 'Manage routine inspection schedules, HSE audits, and customizable digital checklists.',
+    features: ['Digital checklist', 'Automated scheduling', 'Inspection history'],
     active: false,
   },
   {
@@ -274,10 +274,10 @@ const MODULES = [
     color: '#f59e0b',
     from: 'from-amber-500',
     to: 'to-orange-500',
-    title: 'Penilaian Risiko',
+    title: 'Risk Assessment',
     en: 'Risk Assessment',
-    desc: 'Identifikasi, evaluasi, dan kendalikan risiko dengan matriks HIRADC/HIRAC.',
-    features: ['Matriks risiko HIRADC', 'Monitoring kontrol', 'Risk register'],
+    desc: 'Identify, evaluate, and control risks using HIRADC/HIRAC matrices.',
+    features: ['HIRADC risk matrix', 'Control monitoring', 'Risk register'],
     active: false,
   },
   {
@@ -286,10 +286,10 @@ const MODULES = [
     color: '#10b981',
     from: 'from-emerald-500',
     to: 'to-teal-500',
-    title: 'Pelatihan K3',
+    title: 'Safety Training',
     en: 'Safety Training',
-    desc: 'Kelola program pelatihan K3, sertifikasi karyawan, dan rekam jejak kompetensi.',
-    features: ['Rekap sertifikasi', 'Jadwal pelatihan', 'Tracking kompetensi'],
+    desc: 'Manage HSE training programs, employee certifications, and competency records.',
+    features: ['Certification summary', 'Training schedule', 'Competency tracking'],
     active: false,
   },
   {
@@ -298,13 +298,13 @@ const MODULES = [
     color: '#8b5cf6',
     from: 'from-violet-500',
     to: 'to-purple-500',
-    title: 'Dokumen & Regulasi',
+    title: 'Safety Documents',
     en: 'Safety Documents',
-    desc: 'Akses SOP, prosedur K3, dan peraturan perundangan dalam repositori terpusat.',
+    desc: 'Access SOPs, HSE procedures, and regulations in a centralized repository.',
     features: [
-      'SOP & Prosedur',
-      'Regulasi KLHK & Kemenaker',
-      'Guideline internal',
+      'SOPs & Procedures',
+      'KLHK & Kemenaker regulations',
+      'Internal guidelines',
     ],
     active: false,
   },
@@ -314,29 +314,29 @@ const MODULES = [
 const STEPS = [
   {
     n: '01',
-    title: 'Login & Akses',
-    desc: 'Masuk dengan akun Anda. Sistem otomatis menyesuaikan tampilan dan fitur berdasarkan role jabatan.',
+    title: 'Login & Access',
+    desc: 'Sign in with your account. The system automatically adjusts the interface and features based on your role.',
     Icon: LogIn,
     color: '#6366f1',
   },
   {
     n: '02',
-    title: 'Catat Temuan',
-    desc: 'Input temuan lapangan lengkap dengan foto, kategori, prioritas, checklist, dan estimasi biaya.',
+    title: 'Record Finding',
+    desc: 'Input field findings complete with photos, category, priority, checklist, and cost estimates.',
     Icon: ClipboardList,
     color: '#0ea5e9',
   },
   {
     n: '03',
-    title: 'Tindak Lanjut',
-    desc: 'Tim terkait mendapat notifikasi otomatis dan dapat memperbarui status, biaya, serta progress.',
+    title: 'Follow Up',
+    desc: 'Relevant teams receive automatic notifications and can update status, costs, and progress.',
     Icon: Activity,
     color: '#f59e0b',
   },
   {
     n: '04',
-    title: 'Selesai & Arsip',
-    desc: 'Temuan selesai otomatis masuk arsip dengan laporan lengkap siap untuk keperluan audit & pelaporan.',
+    title: 'Complete & Archive',
+    desc: 'Completed findings are automatically archived with full reports ready for audit & reporting purposes.',
     Icon: CheckCircle2,
     color: '#10b981',
   },
@@ -353,10 +353,10 @@ export default function LandingPage({ onLogin }) {
   const statsRef = useRef(null);
 
   const HEADLINES = [
-    'Keselamatan Kerja',
-    'Kesehatan Karyawan',
-    'Lingkungan Hidup',
-    'Kepatuhan K3',
+    'Occupational Safety',
+    'Employee Health',
+    'Work Environment',
+    'HSE Compliance',
   ];
 
   // Headline rotation
@@ -463,9 +463,9 @@ export default function LandingPage({ onLogin }) {
           </div>
           <nav className="hidden md:flex items-center gap-7">
             {[
-              ['#pillars', 'Pilar HSE'],
-              ['#modules', 'Modul'],
-              ['#how', 'Cara Kerja'],
+              ['#pillars', 'HSE Pillars'],
+              ['#modules', 'Modules'],
+              ['#how', 'How It Works'],
             ].map(([href, label]) => (
               <a
                 key={href}
@@ -484,7 +484,7 @@ export default function LandingPage({ onLogin }) {
               boxShadow: '0 4px 16px #6366f130',
             }}
           >
-            <LogIn size={15} /> Masuk
+            <LogIn size={15} /> Sign In
           </button>
         </div>
       </header>
@@ -612,12 +612,12 @@ export default function LandingPage({ onLogin }) {
             }}
           >
             <Star size={11} className="fill-indigo-400 text-indigo-400" />
-            Platform Manajemen K3 Terpadu · CPIN
+            Integrated HSE Management Platform · CPIN
           </div>
 
           {/* Main headline */}
           <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-tight mb-3 text-white">
-            Sistem Informasi
+            Information System
           </h1>
           <h2
             className="text-4xl md:text-6xl font-black tracking-tight leading-tight mb-2"
@@ -637,15 +637,15 @@ export default function LandingPage({ onLogin }) {
               className="headline-fade text-lg md:text-xl font-semibold"
               style={{ color: '#94a3b8' }}
             >
-              Menjaga{' '}
-              <span style={{ color: '#a5b4fc' }}>{HEADLINES[hlIdx]}</span> di
-              Seluruh Fasilitas
+              Protecting{' '}
+              <span style={{ color: '#a5b4fc' }}>{HEADLINES[hlIdx]}</span>{' '}
+              Across All Facilities
             </p>
           </div>
 
           <p className="text-base md:text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed mb-10">
-            Platform digital terpadu untuk pengelolaan keselamatan, kesehatan
-            kerja, dan lingkungan hidup di seluruh unit operasional{' '}
+            An integrated digital platform for managing safety, occupational
+            health, and environmental affairs across all operational units of{' '}
             <span className="text-gray-400 font-semibold">
               PT Charoen Pokphand Indonesia
             </span>
@@ -669,7 +669,7 @@ export default function LandingPage({ onLogin }) {
               }
             >
               <LogIn size={18} />
-              Masuk ke Sistem
+              Sign In to System
               <ChevronRight
                 size={16}
                 className="group-hover:translate-x-1 transition-transform"
@@ -683,17 +683,17 @@ export default function LandingPage({ onLogin }) {
                 background: 'rgba(255,255,255,0.03)',
               }}
             >
-              Lihat Modul <ArrowRight size={16} />
+              View Modules <ArrowRight size={16} />
             </a>
           </div>
 
           {/* Mini stat pills */}
           <div className="flex flex-wrap items-center justify-center gap-3">
             {[
-              { label: '5 Kategori Temuan', color: '#6366f1' },
+              { label: '5 Finding Categories', color: '#6366f1' },
               { label: 'Zero Accident Target', color: '#ef4444' },
               { label: 'ISO 45001 & 14001', color: '#10b981' },
-              { label: 'Real-time Notifikasi', color: '#f59e0b' },
+              { label: 'Real-time Notifications', color: '#f59e0b' },
             ].map((p) => (
               <div
                 key={p.label}
@@ -814,14 +814,14 @@ export default function LandingPage({ onLogin }) {
               color: '#6ee7b7',
             }}
           >
-            <Leaf size={11} /> Pilar Utama K3
+            <Leaf size={11} /> Core HSE Pillars
           </div>
           <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight mb-3">
             Health, Safety & Environment
           </h2>
           <p className="text-base text-gray-500 max-w-xl mx-auto">
-            Tiga pilar utama komitmen PT Charoen Pokphand Indonesia dalam
-            menciptakan lingkungan kerja yang aman, sehat, dan berkelanjutan.
+            The three core pillars of PT Charoen Pokphand Indonesia's commitment
+            to creating a safe, healthy, and sustainable work environment.
           </p>
         </div>
 
@@ -942,14 +942,14 @@ export default function LandingPage({ onLogin }) {
               color: '#a5b4fc',
             }}
           >
-            <Building2 size={11} /> Modul Sistem
+            <Building2 size={11} /> System Modules
           </div>
           <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight mb-3">
-            Platform Lengkap Manajemen K3
+            Complete HSE Management Platform
           </h2>
           <p className="text-base text-gray-500 max-w-xl mx-auto">
-            Rangkaian modul terintegrasi yang mendukung seluruh proses manajemen
-            K3 — dari pelaporan hingga tindak lanjut dan pelaporan audit.
+            An integrated suite of modules supporting the entire HSE management
+            process — from reporting to follow-up and audit reporting.
           </p>
         </div>
 
@@ -1022,7 +1022,7 @@ export default function LandingPage({ onLogin }) {
                             }
                       }
                     >
-                      {mod.active ? 'Tersedia' : 'Segera Hadir'}
+                      {mod.active ? 'Available' : 'Coming Soon'}
                     </span>
                   </div>
                   <h3 className="text-base font-extrabold text-white mb-0.5">
@@ -1056,11 +1056,11 @@ export default function LandingPage({ onLogin }) {
                       className="flex items-center gap-1.5 text-sm font-bold group-hover:gap-2.5 transition-all"
                       style={{ color: mod.color }}
                     >
-                      Buka Modul <ArrowRight size={14} />
+                      Open Module <ArrowRight size={14} />
                     </div>
                   ) : (
                     <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                      <Lock size={12} /> Dalam Pengembangan
+                      <Lock size={12} /> In Development
                     </div>
                   )}
                 </div>
@@ -1081,14 +1081,14 @@ export default function LandingPage({ onLogin }) {
               color: '#fcd34d',
             }}
           >
-            <TrendingUp size={11} /> Cara Kerja
+            <TrendingUp size={11} /> How It Works
           </div>
           <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight mb-3">
-            Mudah & Terstruktur
+            Simple & Structured
           </h2>
           <p className="text-base text-gray-500 max-w-lg mx-auto">
-            Empat langkah sederhana dari pencatatan temuan hingga arsip laporan
-            siap audit.
+            Four simple steps from recording a finding to archiving an
+            audit-ready report.
           </p>
         </div>
 
@@ -1178,11 +1178,11 @@ export default function LandingPage({ onLogin }) {
               <AlertTriangle size={28} className="text-white" />
             </div>
             <h2 className="text-2xl md:text-4xl font-black text-white mb-3">
-              Siap Memulai?
+              Ready to Get Started?
             </h2>
             <p className="text-base text-gray-400 mb-8 max-w-md mx-auto">
-              Masuk dengan akun Anda dan mulai kelola findings safety, quality,
-              dan lingkungan secara digital.
+              Sign in with your account and start managing safety, quality,
+              and environmental findings digitally.
             </p>
             <button
               onClick={onLogin}
@@ -1199,7 +1199,7 @@ export default function LandingPage({ onLogin }) {
               }
             >
               <LogIn size={17} />
-              Masuk Sekarang
+              Sign In Now
               <ChevronRight
                 size={15}
                 className="group-hover:translate-x-1 transition-transform"

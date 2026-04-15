@@ -16,12 +16,12 @@ export default function Sidebar() {
 
   const allLinks = [
     { to: '/', icon: LayoutDashboard, label: 'Dashboard', badge: null, page: 'dashboard' },
-    { to: '/findings', icon: ClipboardList, label: 'Temuan', badge: null, page: 'findings' },
-    { to: '/archive', icon: Archive, label: 'Arsip', badge: null, page: 'archive' },
-    { to: '/costs', icon: DollarSign, label: 'Biaya', badge: null, page: 'costs' },
+    { to: '/findings', icon: ClipboardList, label: 'Findings', badge: null, page: 'findings' },
+    { to: '/archive', icon: Archive, label: 'Archive', badge: null, page: 'archive' },
+    { to: '/costs', icon: DollarSign, label: 'Costs', badge: null, page: 'costs' },
     { to: '/guidelines', icon: BookOpen, label: 'Guideline', badge: null, page: 'guidelines' },
-    { to: '/notifications', icon: Bell, label: 'Notifikasi', badge: unreadNotifs || null, page: 'notifications' },
-    { to: '/users', icon: Users, label: 'Pengguna', badge: null, page: 'users' },
+    { to: '/notifications', icon: Bell, label: 'Notifications', badge: unreadNotifs || null, page: 'notifications' },
+    { to: '/users', icon: Users, label: 'Users', badge: null, page: 'users' },
   ]
   const links = allLinks.filter(l => canAccessPage(l.page))
 

@@ -43,27 +43,27 @@ export default function FindingDetailPage() {
     return () => { clearTimeout(t1); clearTimeout(t2) }
   }, [searchParams])
 
-  if(!f) return <div className="text-center py-24 text-gray-500"><AlertTriangle size={48} className="mx-auto mb-4 opacity-40" /><p className="text-lg">Temuan tidak ditemukan.</p><Link to="/findings" className="text-indigo-400 text-base mt-3 inline-block">← Kembali</Link></div>
+  if(!f) return <div className="text-center py-24 text-gray-500"><AlertTriangle size={48} className="mx-auto mb-4 opacity-40" /><p className="text-lg">Finding not found.</p><Link to="/findings" className="text-indigo-400 text-base mt-3 inline-block">← Back</Link></div>
 
   const type=getType(f.type), pri=getPriority(f.priority), prog=getProgress(f.checklist), days=getDaysLeft(f.deadline), od=days!==null&&days<0&&!isCompleted(f), done=isCompleted(f), TypeIcon=type?.icon||AlertTriangle
 
   const toggleCheck = async (cid) => {
     const cl=f.checklist.map(c=>c.id===cid?{...c,done:!c.done}:c); const willDone=cl.length>0&&cl.every(c=>c.done)
     if(willDone) {
-      setArchiveConfirm({ name: f.name, onConfirm: async () => { await updateFinding(f.id,{...f,checklist:cl}); showToast('Selesai → Arsip','success') } })
+      setArchiveConfirm({ name: f.name, onConfirm: async () => { await updateFinding(f.id,{...f,checklist:cl}); showToast('Completed → Archived','success') } })
       return
     }
-    try { await updateFinding(f.id,{...f,checklist:cl}) } catch { showToast('Gagal','error') }
+    try { await updateFinding(f.id,{...f,checklist:cl}) } catch { showToast('Failed','error') }
   }
   const confirmArchive = async () => {
     if(!archiveConfirm) return
-    try { await archiveConfirm.onConfirm() } catch { showToast('Gagal','error') }
+    try { await archiveConfirm.onConfirm() } catch { showToast('Failed','error') }
     setArchiveConfirm(null)
   }
   const handleDelete = () => setDeleteConfirm(true)
   const confirmDelete = async () => {
     setDeleteLoading(true)
-    try { await deleteFinding(f.id); navigate('/findings') } catch { showToast('Gagal','error') } finally { setDeleteLoading(false); setDeleteConfirm(false) }
+    try { await deleteFinding(f.id); navigate('/findings') } catch { showToast('Failed','error') } finally { setDeleteLoading(false); setDeleteConfirm(false) }
   }
 
   const flash = (section) => flashSection === section ? 'section-flash' : ''
@@ -78,7 +78,7 @@ export default function FindingDetailPage() {
         }
         .section-flash { animation: section-flash 1.5s ease 2; }
       `}</style>
-      <button onClick={()=>navigate(-1)} className="text-base text-gray-400 hover:text-gray-200 flex items-center gap-2 transition font-medium"><ArrowLeft size={18} /> Kembali</button>
+      <button onClick={()=>navigate(-1)} className="text-base text-gray-400 hover:text-gray-200 flex items-center gap-2 transition font-medium"><ArrowLeft size={18} /> Back</button>
 
       {/* Header */}
       <div className="bg-dark-800 border border-dark-700 rounded-2xl p-7" style={{borderLeftWidth:5,borderLeftColor:od?'#ef4444':type?.color}}>
@@ -89,12 +89,12 @@ export default function FindingDetailPage() {
             <div className="flex items-center gap-3 mt-3 flex-wrap">
               <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-bold" style={{background:type?.bg,color:type?.color}}>{type?.label}</span>
               <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-bold" style={{background:pri?.color+'18',color:pri?.color}}>{pri?.label}</span>
-              {done && <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-bold bg-emerald-500/15 text-emerald-400"><CheckCircle2 size={14} /> Selesai</span>}
+              {done && <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-bold bg-emerald-500/15 text-emerald-400"><CheckCircle2 size={14} /> Completed</span>}
               {od && <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-bold bg-red-500/15 text-red-400"><AlertTriangle size={14} /> Overdue {Math.abs(days)}h</span>}
             </div>
-            {f.createdAt && <p className="text-xs text-gray-500 mt-2">Dibuat: {formatDateTime(f.createdAt)}</p>}
+            {f.createdAt && <p className="text-xs text-gray-500 mt-2">Created: {formatDateTime(f.createdAt)}</p>}
           </div>
-          <button onClick={handleDelete} className="text-red-400/50 hover:text-red-400 p-2 transition" title="Hapus"><Trash2 size={22} /></button>
+          <button onClick={handleDelete} className="text-red-400/50 hover:text-red-400 p-2 transition" title="Delete"><Trash2 size={22} /></button>
         </div>
 
         <p className="text-base text-gray-400 mt-5 leading-relaxed">{f.description}</p>
@@ -102,7 +102,7 @@ export default function FindingDetailPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
           {[
             {icon:MapPin,label:'Area',val:f.area||'-',key:'area'},
-            {icon:User,label:'Pelapor',val:f.reportedBy||'-',key:'pelapor'},
+            {icon:User,label:'Reporter',val:f.reportedBy||'-',key:'pelapor'},
             {icon:User,label:'PIC',val:f.assignedTo||'-',key:'pic'},
             {icon:Calendar,label:'Deadline',val:f.deadline?formatDate(f.deadline):'-',key:'deadline'},
           ].map((m,i)=>(
@@ -117,7 +117,7 @@ export default function FindingDetailPage() {
       {/* Progress */}
       <div ref={checklistRef} className={`bg-dark-800 border border-dark-700 rounded-2xl p-6 ${flash('checklist')}`}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-gray-100">Progress Checklist</h3>
+          <h3 className="text-lg font-bold text-gray-100">Checklist Progress</h3>
           <span className={`text-lg font-bold ${prog===100?'text-emerald-400':'text-gray-400'}`}>{prog}%</span>
         </div>
         <div className="h-3 bg-dark-700 rounded-full overflow-hidden mb-5">
@@ -137,21 +137,21 @@ export default function FindingDetailPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Cost */}
         <div ref={costRef} className={`bg-dark-800 border border-dark-700 rounded-2xl p-6 ${flash('cost')}`}>
-          <h3 className="text-lg font-bold text-gray-100 mb-4 flex items-center gap-2"><DollarSign size={20} className="text-amber-400" /> Biaya</h3>
-          {!f.costRequired ? <p className="text-base text-gray-500">Tidak ada biaya.</p> : (
+          <h3 className="text-lg font-bold text-gray-100 mb-4 flex items-center gap-2"><DollarSign size={20} className="text-amber-400" /> Cost</h3>
+          {!f.costRequired ? <p className="text-base text-gray-500">No cost required.</p> : (
             <div className="space-y-5">
 
               {/* Estimasi */}
               <div className="space-y-2">
-                <p className="text-sm font-bold text-amber-400 uppercase tracking-wider">Biaya Estimasi</p>
+                <p className="text-sm font-bold text-amber-400 uppercase tracking-wider">Estimated Cost</p>
                 {(f.costItems||[]).length>0 ? (
                   <div className="rounded-xl border border-dark-700 overflow-hidden">
                     <table className="w-full text-sm">
                       <thead><tr className="bg-dark-900 border-b border-dark-700 text-xs text-gray-500 uppercase tracking-wider">
-                        <th className="px-4 py-2.5 text-left font-bold">Nama Item</th>
+                        <th className="px-4 py-2.5 text-left font-bold">Item Name</th>
                         <th className="px-3 py-2.5 text-left font-bold">SKU</th>
                         <th className="px-3 py-2.5 text-center font-bold">Qty</th>
-                        <th className="px-3 py-2.5 text-right font-bold">Harga Satuan</th>
+                        <th className="px-3 py-2.5 text-right font-bold">Unit Price</th>
                         <th className="px-3 py-2.5 text-right font-bold">Total</th>
                       </tr></thead>
                       <tbody>{f.costItems.map(c=>(
@@ -164,14 +164,14 @@ export default function FindingDetailPage() {
                         </tr>
                       ))}</tbody>
                       <tfoot><tr className="bg-dark-900/60 border-t-2 border-dark-600">
-                        <td colSpan={4} className="px-4 py-3 text-sm font-extrabold text-gray-400 uppercase tracking-wider">Total Estimasi</td>
+                        <td colSpan={4} className="px-4 py-3 text-sm font-extrabold text-gray-400 uppercase tracking-wider">Total Estimate</td>
                         <td className="px-3 py-3 text-right font-extrabold font-mono text-amber-400">{formatCurrency(f.estimatedCost)}</td>
                       </tr></tfoot>
                     </table>
                   </div>
                 ) : (
                   <div className="flex justify-between px-4 py-3 bg-dark-900 border border-dark-700 rounded-xl">
-                    <span className="text-base text-gray-400">Total Estimasi</span>
+                    <span className="text-base text-gray-400">Total Estimate</span>
                     <span className="text-base font-bold text-amber-300 font-mono">{formatCurrency(f.estimatedCost)}</span>
                   </div>
                 )}
@@ -179,15 +179,15 @@ export default function FindingDetailPage() {
 
               {/* Aktual */}
               <div className="space-y-2 pt-4 border-t border-dark-700">
-                <p className="text-sm font-bold text-emerald-400 uppercase tracking-wider">Biaya Aktual</p>
+                <p className="text-sm font-bold text-emerald-400 uppercase tracking-wider">Actual Cost</p>
                 {(f.actualCostItems||[]).length>0 ? (
                   <div className="rounded-xl border border-dark-700 overflow-hidden">
                     <table className="w-full text-sm">
                       <thead><tr className="bg-dark-900 border-b border-dark-700 text-xs text-gray-500 uppercase tracking-wider">
-                        <th className="px-4 py-2.5 text-left font-bold">Nama Item</th>
+                        <th className="px-4 py-2.5 text-left font-bold">Item Name</th>
                         <th className="px-3 py-2.5 text-left font-bold">SKU</th>
                         <th className="px-3 py-2.5 text-center font-bold">Qty</th>
-                        <th className="px-3 py-2.5 text-right font-bold">Harga Satuan</th>
+                        <th className="px-3 py-2.5 text-right font-bold">Unit Price</th>
                         <th className="px-3 py-2.5 text-right font-bold">Total</th>
                       </tr></thead>
                       <tbody>{f.actualCostItems.map(c=>(
@@ -200,20 +200,20 @@ export default function FindingDetailPage() {
                         </tr>
                       ))}</tbody>
                       <tfoot><tr className="bg-dark-900/60 border-t-2 border-dark-600">
-                        <td colSpan={4} className="px-4 py-3 text-sm font-extrabold text-gray-400 uppercase tracking-wider">Total Aktual</td>
+                        <td colSpan={4} className="px-4 py-3 text-sm font-extrabold text-gray-400 uppercase tracking-wider">Total Actual</td>
                         <td className="px-3 py-3 text-right font-extrabold font-mono text-emerald-400">{formatCurrency(f.actualCost)}</td>
                       </tr></tfoot>
                     </table>
                   </div>
                 ) : (
                   <div className="flex justify-between px-4 py-3 bg-dark-900 border border-dark-700 rounded-xl">
-                    <span className="text-base text-gray-400">Total Aktual</span>
+                    <span className="text-base text-gray-400">Total Actual</span>
                     <span className="text-base font-bold text-gray-400 font-mono">{f.actualCost ? formatCurrency(f.actualCost) : '-'}</span>
                   </div>
                 )}
               </div>
 
-              {f.costNotes && <p className="text-base text-gray-500 px-1 pt-1 border-t border-dark-700">Catatan: {f.costNotes}</p>}
+              {f.costNotes && <p className="text-base text-gray-500 px-1 pt-1 border-t border-dark-700">Notes: {f.costNotes}</p>}
             </div>
           )}
         </div>
@@ -221,7 +221,7 @@ export default function FindingDetailPage() {
         {/* Follow-ups */}
         <div className="bg-dark-800 border border-dark-700 rounded-2xl p-6">
           <h3 className="text-lg font-bold text-gray-100 mb-4 flex items-center gap-2"><History size={20} className="text-cyan-400" /> Follow-up</h3>
-          {(f.followUps||[]).length===0 ? <p className="text-base text-gray-500">Belum ada follow-up.</p> : (
+          {(f.followUps||[]).length===0 ? <p className="text-base text-gray-500">No follow-ups yet.</p> : (
             <div className="space-y-3">
               {f.followUps.map((fu,i)=>(
                 <div key={fu.id} className="flex gap-3 items-start">
@@ -237,7 +237,7 @@ export default function FindingDetailPage() {
       {/* Photos */}
       {photos?.length>0 && (
         <div className="bg-dark-800 border border-dark-700 rounded-2xl p-6">
-          <h3 className="text-lg font-bold text-gray-100 mb-4">Foto</h3>
+          <h3 className="text-lg font-bold text-gray-100 mb-4">Photos</h3>
           <div className="flex gap-4 flex-wrap">
             {photos.map(p => (
               <div key={p.id} className="flex flex-col items-center gap-1.5 cursor-pointer group" onClick={() => setLightbox(p.url)}>
@@ -264,7 +264,7 @@ export default function FindingDetailPage() {
 
       {/* Discussion */}
       <div ref={discussionRef} className={`bg-dark-800 border border-dark-700 rounded-2xl p-6 ${flash('discussion')}`}>
-        <h3 className="text-lg font-bold text-gray-100 mb-2">Diskusi</h3>
+        <h3 className="text-lg font-bold text-gray-100 mb-2">Discussion</h3>
         <DiscussionPanel finding={f} autoOpen={searchParams.get('focus') === 'discussion'} />
       </div>
 
@@ -277,16 +277,16 @@ export default function FindingDetailPage() {
                 <Check size={28} className="text-emerald-400" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-gray-100">Konfirmasi Arsip</h3>
-                <p className="text-sm text-gray-400 mt-0.5">Semua checklist telah selesai</p>
+                <h3 className="text-lg font-bold text-gray-100">Confirm Archive</h3>
+                <p className="text-sm text-gray-400 mt-0.5">All checklist items completed</p>
               </div>
             </div>
-            <p className="text-base text-gray-300 mb-1">Temuan <span className="font-bold text-gray-100">"{archiveConfirm.name}"</span> akan ditandai selesai dan dipindahkan ke arsip.</p>
-            <p className="text-sm text-gray-500 mb-6">Tindakan ini tidak dapat dibatalkan. Pastikan semua pekerjaan sudah benar-benar selesai sebelum melanjutkan.</p>
+            <p className="text-base text-gray-300 mb-1">Finding <span className="font-bold text-gray-100">"{archiveConfirm.name}"</span> will be marked as completed and moved to archive.</p>
+            <p className="text-sm text-gray-500 mb-6">This action cannot be undone. Make sure all work is truly complete before proceeding.</p>
             <div className="flex gap-3 justify-end">
-              <button onClick={()=>setArchiveConfirm(null)} className="px-5 py-2.5 rounded-xl border border-dark-600 text-gray-400 text-sm font-bold hover:bg-dark-700 transition">Batal</button>
+              <button onClick={()=>setArchiveConfirm(null)} className="px-5 py-2.5 rounded-xl border border-dark-600 text-gray-400 text-sm font-bold hover:bg-dark-700 transition">Cancel</button>
               <button onClick={confirmArchive} className="px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-bold flex items-center gap-2 transition">
-                <Check size={16} /> Ya, Arsipkan
+                <Check size={16} /> Yes, Archive
               </button>
             </div>
           </div>
@@ -302,17 +302,17 @@ export default function FindingDetailPage() {
                 <Trash2 size={26} className="text-red-400" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-gray-100">Hapus Temuan</h3>
-                <p className="text-sm text-gray-400 mt-0.5">Tindakan ini tidak dapat dibatalkan</p>
+                <h3 className="text-lg font-bold text-gray-100">Delete Finding</h3>
+                <p className="text-sm text-gray-400 mt-0.5">This action cannot be undone</p>
               </div>
             </div>
-            <p className="text-base text-gray-300 mb-1">Yakin ingin menghapus temuan <span className="font-bold text-gray-100">"{f.name}"</span>?</p>
-            <p className="text-sm text-gray-500 mb-6">Semua data termasuk foto, checklist, dan diskusi akan ikut terhapus secara permanen.</p>
+            <p className="text-base text-gray-300 mb-1">Are you sure you want to delete finding <span className="font-bold text-gray-100">"{f.name}"</span>?</p>
+            <p className="text-sm text-gray-500 mb-6">All data including photos, checklist, and discussions will be permanently deleted.</p>
             <div className="flex gap-3 justify-end">
-              <button onClick={() => setDeleteConfirm(false)} className="px-5 py-2.5 rounded-xl border border-dark-600 text-gray-400 text-sm font-bold hover:bg-dark-700 transition">Batal</button>
+              <button onClick={() => setDeleteConfirm(false)} className="px-5 py-2.5 rounded-xl border border-dark-600 text-gray-400 text-sm font-bold hover:bg-dark-700 transition">Cancel</button>
               <button onClick={confirmDelete} disabled={deleteLoading} className="px-6 py-2.5 rounded-xl bg-red-500 hover:bg-red-400 disabled:opacity-60 text-white text-sm font-bold flex items-center gap-2 transition">
                 {deleteLoading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Trash2 size={15} />}
-                Ya, Hapus
+                Yes, Delete
               </button>
             </div>
           </div>

@@ -13,7 +13,7 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!username.trim() || !password.trim()) {
-      setError('Username dan password wajib diisi')
+      setError('Username and password are required')
       return
     }
     setLoading(true)
@@ -21,7 +21,7 @@ export default function LoginPage() {
     try {
       await login(username.trim(), password)
     } catch (err) {
-      setError(err.message?.includes('401') ? 'Username atau password salah' : 'Gagal terhubung ke server')
+      setError(err.message?.includes('401') ? 'Incorrect username or password' : 'Failed to connect to server')
     } finally {
       setLoading(false)
     }
@@ -59,7 +59,7 @@ export default function LoginPage() {
                   type="text"
                   value={username}
                   onChange={e => { setUsername(e.target.value); setError('') }}
-                  placeholder="Masukkan username"
+                  placeholder="Enter username"
                   className="bg-transparent border-none outline-none text-sm text-gray-200 w-full placeholder-gray-600"
                   autoComplete="username"
                   autoFocus
@@ -76,7 +76,7 @@ export default function LoginPage() {
                   type={showPw ? 'text' : 'password'}
                   value={password}
                   onChange={e => { setPassword(e.target.value); setError('') }}
-                  placeholder="Masukkan password"
+                  placeholder="Enter password"
                   className="bg-transparent border-none outline-none text-sm text-gray-200 w-full placeholder-gray-600"
                   autoComplete="current-password"
                 />
@@ -101,8 +101,8 @@ export default function LoginPage() {
               className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-800 disabled:text-indigo-400 text-white font-semibold py-3 rounded-xl transition text-sm mt-2"
             >
               {loading
-                ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Masuk...</>
-                : <><LogIn size={17} />Masuk</>
+                ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Signing in...</>
+                : <><LogIn size={17} />Sign In</>
               }
             </button>
           </form>

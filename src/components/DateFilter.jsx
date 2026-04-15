@@ -4,10 +4,10 @@ import { CalendarDays, ChevronDown, X } from 'lucide-react'
 const today = () => new Date().toISOString().slice(0, 10)
 
 const PRESETS = [
-  { label: 'Hari Ini', key: 'today' },
-  { label: 'Minggu Ini', key: 'week' },
-  { label: 'Bulan Ini', key: 'month' },
-  { label: 'Semua', key: 'all' },
+  { label: 'Today', key: 'today' },
+  { label: 'This Week', key: 'week' },
+  { label: 'This Month', key: 'month' },
+  { label: 'All', key: 'all' },
 ]
 
 function getPresetRange(key) {
@@ -81,7 +81,7 @@ export default function DateFilter({ value, onChange }) {
             : 'bg-dark-800 text-gray-400 hover:text-gray-200'
         }`}
       >
-        Kustom <ChevronDown size={14} className={`transition-transform ${showCustom ? 'rotate-180' : ''}`} />
+        Custom <ChevronDown size={14} className={`transition-transform ${showCustom ? 'rotate-180' : ''}`} />
       </button>
 
       {/* Custom date inputs */}

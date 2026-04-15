@@ -124,6 +124,12 @@ server.delete('/users/:id', (req, res) => {
   res.json({ success: true });
 });
 
+// ─── Findings: strip photos from list (lazy load on detail view) ──────────────
+server.get('/findings', (_req, res) => {
+  const findings = router.db.get('findings').value();
+  res.json(findings.map(({ photos, ...rest }) => rest));
+});
+
 // ─── GuidelineDocs: strip fileUrl from list (lazy load) ───────────────────────
 server.get('/guidelineDocs', (_req, res) => {
   const docs = router.db.get('guidelineDocs').value();

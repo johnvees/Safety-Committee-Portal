@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useFindings } from '../context/FindingsContext'
 import { getType, getPriority, getProgress, getDaysLeft, isCompleted, formatCurrency, formatDate, formatDateTime } from '../constants'
 import DiscussionPanel from '../components/DiscussionPanel'
+import { api } from '../api'
 import { ArrowLeft, Check, Calendar, MapPin, User, DollarSign, History, AlertTriangle, CheckCircle2, Trash2, X } from 'lucide-react'
 
 export default function FindingDetailPage() {
@@ -10,6 +11,7 @@ export default function FindingDetailPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { findings, updateFinding, deleteFinding, showToast } = useFindings()
+  const [photos, setPhotos] = useState([])
   const [lightbox, setLightbox] = useState(null)
   const [archiveConfirm, setArchiveConfirm] = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
@@ -22,6 +24,12 @@ export default function FindingDetailPage() {
   const discussionRef = useRef(null)
 
   const f = findings.find(fi=>fi.id===Number(id))
+
+  // Fetch photos separately — list endpoint strips them to keep payloads small
+  useEffect(() => {
+    if (!id) return
+    api.getFinding(Number(id)).then(full => setPhotos(full.photos || [])).catch(() => {})
+  }, [id])
 
   useEffect(() => {
     const focus = searchParams.get('focus')
@@ -44,10 +52,10 @@ export default function FindingDetailPage() {
   const toggleCheck = async (cid) => {
     const cl=f.checklist.map(c=>c.id===cid?{...c,done:!c.done}:c); const willDone=cl.length>0&&cl.every(c=>c.done)
     if(willDone) {
-      setArchiveConfirm({ name: f.name, onConfirm: async () => { await updateFinding(f.id,{...f,checklist:cl}); showToast('Selesai → Arsip','success') } })
+      setArchiveConfirm({ name: f.name, onConfirm: async () => { await updateFinding(f.id,{...f,photos,checklist:cl}); showToast('Selesai → Arsip','success') } })
       return
     }
-    try { await updateFinding(f.id,{...f,checklist:cl}) } catch { showToast('Gagal','error') }
+    try { await updateFinding(f.id,{...f,photos,checklist:cl}) } catch { showToast('Gagal','error') }
   }
   const confirmArchive = async () => {
     if(!archiveConfirm) return
@@ -229,11 +237,11 @@ export default function FindingDetailPage() {
       </div>
 
       {/* Photos */}
-      {f.photos?.length>0 && (
+      {photos?.length>0 && (
         <div className="bg-dark-800 border border-dark-700 rounded-2xl p-6">
           <h3 className="text-lg font-bold text-gray-100 mb-4">Foto</h3>
           <div className="flex gap-4 flex-wrap">
-            {f.photos.map(p => (
+            {photos.map(p => (
               <div key={p.id} className="flex flex-col items-center gap-1.5 cursor-pointer group" onClick={() => setLightbox(p.url)}>
                 <img src={p.url} alt="" className="w-28 h-28 rounded-xl object-cover border-2 border-dark-700 group-hover:opacity-80 transition" />
                 {p.uploadedBy && (

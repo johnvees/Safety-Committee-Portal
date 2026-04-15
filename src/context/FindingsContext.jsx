@@ -114,7 +114,7 @@ export function FindingsProvider({ children }) {
 
   // SSE — subscribe to server-pushed change events
   useEffect(() => {
-    const es = new EventSource('http://localhost:3001/events')
+    const es = new EventSource(`http://${window.location.hostname}:3001/events`)
     es.onmessage = (e) => {
       try {
         const payload = JSON.parse(e.data)

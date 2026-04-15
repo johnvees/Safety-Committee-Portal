@@ -1,4 +1,4 @@
-const BASE = 'http://localhost:3001';
+const BASE = `http://${window.location.hostname}:3001`;
 
 async function request(url, options = {}) {
   const res = await fetch(url, {

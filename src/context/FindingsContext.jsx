@@ -80,6 +80,7 @@ export function FindingsProvider({ children }) {
   const [findings, setFindings] = useState([])
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState(null)
+  const [deletionLog, setDeletionLog] = useState([])
 
   // ── Photo cache ────────────────────────────────────────────────────────────
   // Photos are stripped from the list endpoint to keep payloads small.
@@ -104,6 +105,13 @@ export function FindingsProvider({ children }) {
   const showToast = useCallback((message, type = 'info') => {
     setToast({ message, type })
     setTimeout(() => setToast(null), 3500)
+  }, [])
+
+  const loadDeletionLog = useCallback(async () => {
+    try {
+      const data = await api.getDeletionLog()
+      setDeletionLog(data)
+    } catch {}
   }, [])
 
   const loadFindings = useCallback(async () => {
@@ -131,6 +139,7 @@ export function FindingsProvider({ children }) {
   }, [])
 
   useEffect(() => { loadFindings() }, [loadFindings])
+  useEffect(() => { loadDeletionLog() }, [loadDeletionLog])
 
   // SSE — subscribe to server-pushed change events
   useEffect(() => {
@@ -138,8 +147,9 @@ export function FindingsProvider({ children }) {
     es.onmessage = (e) => {
       try {
         const payload = JSON.parse(e.data)
-        if (payload.type === 'change' && payload.resource === 'findings') {
-          silentRefresh()
+        if (payload.type === 'change') {
+          if (payload.resource === 'findings') silentRefresh()
+          if (payload.resource === 'deletionLog') loadDeletionLog()
         }
       } catch {}
     }
@@ -202,6 +212,18 @@ export function FindingsProvider({ children }) {
   }
 
   const deleteFinding = async (id) => {
+    const finding = findings.find(f => f.id === id)
+    const entry = {
+      id: uid(),
+      type: 'deleted',
+      message: `Finding "${finding?.name || 'Unknown'}" was deleted by ${user?.name || 'someone'}`,
+      date: now(),
+      findingName: finding?.name || '',
+      findingType: finding?.type || '',
+      actorName: user?.name || '',
+      targetRule: 'all',
+    }
+    try { await api.addDeletionLog(entry); setDeletionLog(prev => [entry, ...prev]) } catch {}
     await api.deleteFinding(id)
     delete photoCacheRef.current[id]
     setPhotoCache(prev => { const next = { ...prev }; delete next[id]; return next })
@@ -210,7 +232,7 @@ export function FindingsProvider({ children }) {
   }
 
   return (
-    <FindingsContext.Provider value={{ findings, loading, toast, showToast, loadFindings, createFinding, updateFinding, deleteFinding, photoCache, fetchPhotos }}>
+    <FindingsContext.Provider value={{ findings, loading, toast, showToast, loadFindings, createFinding, updateFinding, deleteFinding, deletionLog, photoCache, fetchPhotos }}>
       {children}
     </FindingsContext.Provider>
   )

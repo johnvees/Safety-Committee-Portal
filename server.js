@@ -25,10 +25,14 @@ function broadcast(payload) {
 // Hook into lowdb's write — fires synchronously after every DB mutation.
 // This is more reliable than wrapping res.json/res.jsonp because json-server
 // uses res.jsonp internally, which our middleware would miss.
+// _broadcastResource lets specific endpoints override the resource name before
+// calling .write(), so clients only reload the data that actually changed.
+let _broadcastResource = 'findings'
 const _dbWrite = router.db.write.bind(router.db)
 router.db.write = function () {
   const result = _dbWrite()
-  broadcast({ type: 'change', resource: 'findings' })
+  broadcast({ type: 'change', resource: _broadcastResource })
+  _broadcastResource = 'findings' // reset to default after every write
   return result
 }
 
@@ -123,6 +127,24 @@ server.delete('/users/:id', (req, res) => {
   saveUsers();
   res.json({ success: true });
 });
+
+// ─── DeletionLog: persistent cross-user deletion notifications ────────────────
+// Ensure the collection exists in db (safe to run every startup)
+if (!router.db.has('deletionLog').value()) {
+  router.db.set('deletionLog', []).write()
+}
+
+server.get('/deletionLog', (_req, res) => {
+  res.json(router.db.get('deletionLog').value())
+})
+
+server.post('/deletionLog', (req, res) => {
+  const entry = req.body || {}
+  if (!entry.id) entry.id = `del-${Date.now()}`
+  _broadcastResource = 'deletionLog'
+  router.db.get('deletionLog').push(entry).write()
+  res.status(201).json(entry)
+})
 
 // ─── Findings: strip photos from list and PATCH response ──────────────────────
 // Photos are large base64 blobs — only needed when explicitly fetching one finding.

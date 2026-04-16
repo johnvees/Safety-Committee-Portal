@@ -18,7 +18,7 @@ function loadSet(type, username) {
 
 export function NotifProvider({ children }) {
   const { user } = useAuth()
-  const { findings } = useFindings()
+  const { findings, deletionLog } = useFindings()
 
   const username = user?.username || 'guest'
 
@@ -71,8 +71,12 @@ export function NotifProvider({ children }) {
       // Auto: deadline warning ≤3 days
       if (days !== null && days > 0 && days <= 3 && !isCompleted(f) && !dismissed.has(`auto-warn-${f.id}`)) count++
     })
+    // Deletion log notifications (global — visible to all users except the actor)
+    ;(deletionLog || []).forEach(n => {
+      if (!dismissed.has(n.id) && !readSet.has(n.id)) count++
+    })
     return count
-  }, [findings, user, dismissed, readSet])
+  }, [findings, deletionLog, user, dismissed, readSet])
 
   return (
     <NotifContext.Provider value={{ dismissed, readSet, dismiss, markRead, isRead, unreadCount }}>

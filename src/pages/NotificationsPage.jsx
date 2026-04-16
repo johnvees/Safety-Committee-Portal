@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { useNotif } from '../context/NotifContext'
 import { matchesNotifUser } from '../utils/notifUtils'
 import { getType, getDaysLeft, isCompleted, formatDate, formatDateTime } from '../constants'
-import { Bell, AlertTriangle, Clock, CheckCircle2, UserCheck, X, BellOff, PlusCircle, PencilLine, DollarSign, CalendarClock, ChevronDown, ChevronUp, Trash2, AtSign } from 'lucide-react'
+import { Bell, AlertTriangle, Clock, CheckCircle2, UserCheck, X, BellOff, PlusCircle, PencilLine, DollarSign, CalendarClock, ChevronDown, ChevronUp, Trash2, AtSign, ShieldAlert } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import DateFilter, { matchesDateFilter, usePersistentDateFilter } from '../components/DateFilter'
@@ -14,6 +14,7 @@ const CATEGORIES = [
   { key: 'mention',  label: 'Mentions', types: ['mention'] },
   { key: 'progress', label: 'Progress', types: ['checklist', 'completed', 'created', 'updated'] },
   { key: 'cost',     label: 'Cost',     types: ['cost_updated'] },
+  { key: 'deleted',  label: 'Deleted',  types: ['deleted'] },
 ]
 
 const FOCUS_MAP = {
@@ -29,7 +30,7 @@ const FOCUS_MAP = {
 const READ_PAGE_SIZE = 10
 
 export default function NotificationsPage() {
-  const { findings } = useFindings()
+  const { findings, deletionLog } = useFindings()
   const { user } = useAuth()
   const { dismissed, readSet, dismiss, markRead, isRead } = useNotif()
   const navigate = useNavigate()
@@ -67,8 +68,11 @@ export default function NotificationsPage() {
         notifs.push({ id: `auto-done-${f.id}`, type: 'completed', message: `"${f.name}" has been completed and archived`, date: f.createdAt, findingId: f.id, findingName: f.name, findingType: f.type, auto: true })
     })
 
+    // Deletion log: persistent cross-user notifications for deleted findings
+    ;(deletionLog || []).forEach(n => notifs.push({ ...n, auto: true }))
+
     return notifs.filter(n => !dismissed.has(n.id)).sort((a, b) => new Date(b.date) - new Date(a.date))
-  }, [findings, dismissed, user])
+  }, [findings, deletionLog, dismissed, user])
 
   const dateFiltered = allNotifs.filter(n => matchesDateFilter(n.date, dateRange))
 
@@ -100,10 +104,12 @@ export default function NotificationsPage() {
     cost_updated:     { icon: DollarSign,    color: '#f59e0b', bg: '#fffbeb' },
     deadline_updated: { icon: CalendarClock, color: '#f59e0b', bg: '#fffbeb' },
     mention:          { icon: AtSign,        color: '#6366f1', bg: '#eef2ff' },
+    deleted:          { icon: ShieldAlert,   color: '#ef4444', bg: '#fef2f2' },
   }
 
   const handleClick = (n) => {
     if (!isRead(n)) markRead(n.id)
+    if (n.type === 'deleted') { navigate('/findings'); return }
     const focus = FOCUS_MAP[n.type]
     navigate(`/findings/${n.findingId}${focus ? `?focus=${focus}` : ''}`)
   }

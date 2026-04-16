@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useFindings } from '../context/FindingsContext'
+import { useAuth } from '../context/AuthContext'
 import { getType, getPriority, getProgress, getDaysLeft, isCompleted, formatCurrency, formatDate, formatDateTime } from '../constants'
 import DiscussionPanel from '../components/DiscussionPanel'
 import { ArrowLeft, Check, Calendar, MapPin, User, DollarSign, History, AlertTriangle, CheckCircle2, Trash2, X } from 'lucide-react'
@@ -10,6 +11,7 @@ export default function FindingDetailPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { findings, updateFinding, deleteFinding, showToast, photoCache, fetchPhotos } = useFindings()
+  const { hasPermission } = useAuth()
   const [lightbox, setLightbox] = useState(null)
   const [archiveConfirm, setArchiveConfirm] = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
@@ -94,7 +96,9 @@ export default function FindingDetailPage() {
             </div>
             {f.createdAt && <p className="text-xs text-gray-500 mt-2">Created: {formatDateTime(f.createdAt)}</p>}
           </div>
-          <button onClick={handleDelete} className="text-red-400/50 hover:text-red-400 p-2 transition" title="Delete"><Trash2 size={22} /></button>
+          {hasPermission('delete_finding') && (
+            <button onClick={handleDelete} className="text-red-400/50 hover:text-red-400 p-2 transition" title="Delete"><Trash2 size={22} /></button>
+          )}
         </div>
 
         <p className="text-base text-gray-400 mt-5 leading-relaxed">{f.description}</p>

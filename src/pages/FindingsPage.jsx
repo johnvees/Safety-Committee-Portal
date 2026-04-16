@@ -10,7 +10,7 @@ import DateFilter, { matchesDateFilter, usePersistentDateFilter } from '../compo
 
 export default function FindingsPage() {
   const { findings, loading, showToast, createFinding, updateFinding, deleteFinding, photoCache, fetchPhotos } = useFindings()
-  const { user } = useAuth()
+  const { user, hasPermission } = useAuth()
   const [showModal, setShowModal] = useState(false)
   const [editId, setEditId] = useState(null)
   const [search, setSearch] = useState('')
@@ -230,7 +230,9 @@ export default function FindingsPage() {
               </div>
               <div className="flex gap-2">
                 <button onClick={()=>openEdit(f)} className="flex items-center gap-2 text-sm font-bold text-indigo-400 border border-indigo-500/20 px-4 py-2.5 rounded-xl hover:bg-indigo-500/10 transition"><Edit3 size={16} /> Edit</button>
-                <button onClick={()=>handleDelete(f.id, f.name)} className="flex items-center text-red-400 border border-red-500/15 px-3 py-2.5 rounded-xl hover:bg-red-500/10 transition"><Trash2 size={16} /></button>
+                {hasPermission('delete_finding') && (
+                  <button onClick={()=>handleDelete(f.id, f.name)} className="flex items-center text-red-400 border border-red-500/15 px-3 py-2.5 rounded-xl hover:bg-red-500/10 transition"><Trash2 size={16} /></button>
+                )}
               </div>
             </div>
           </div>

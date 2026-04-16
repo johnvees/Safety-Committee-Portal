@@ -28,6 +28,9 @@ export const api = {
   updateFinding: (id, data) => request(`${BASE}/findings/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   deleteFinding: (id) => request(`${BASE}/findings/${id}`, { method: 'DELETE' }),
 
+  getDeletionLog: () => request(`${BASE}/deletionLog`),
+  addDeletionLog: (data) => request(`${BASE}/deletionLog`, { method: 'POST', body: JSON.stringify(data) }),
+
   getGuidelineDocs: () => request(`${BASE}/guidelineDocs`),
   getGuidelineDoc: (id) => request(`${BASE}/guidelineDocs/${id}`),
   createGuidelineDoc: (data) => request(`${BASE}/guidelineDocs`, { method: 'POST', body: JSON.stringify(data) }),

@@ -17,40 +17,36 @@ import {
 import { api } from '../api';
 import { useAuth, ROLE_LABELS } from '../context/AuthContext';
 
+// Ordered list of all possible role values for the role selector dropdown
 const ROLES = ['president', 'vice_president', 'general_manager', 'manager', 'supervisor', 'staff', 'viewer', 'admin'];
 
+// Available department options shown in the user form dropdown
 const DEPARTMENTS = [
-  'HSE',
-  'Quality Control',
-  'Operations',
-  'Maintenance',
-  'Environment',
-  'Engineering',
-  'Administration',
-  'Management',
-  'Logistics',
-  'Production',
-];
-const DIVISIONS = [
-  'Management',
-  'Production',
-  'Engineering',
-  'Administration',
-  'HSE',
-  'Logistics',
+  'HSE', 'Quality Control', 'Operations', 'Maintenance', 'Environment',
+  'Engineering', 'Administration', 'Management', 'Logistics', 'Production',
 ];
 
+// Available division options shown in the user form dropdown
+const DIVISIONS = [
+  'Management', 'Production', 'Engineering', 'Administration', 'HSE', 'Logistics',
+];
+
+// Blank/default state for the Add/Edit user form
 const EMPTY_FORM = {
-  name: '',
-  username: '',
-  password: '',
-  role: 'viewer',
+  name:       '',
+  username:   '',
+  password:   '',       // empty string = keep existing password when editing
+  role:       'viewer', // default to least-privileged role
   department: '',
-  division: '',
-  position: '',
-  email: '',
+  division:   '',
+  position:   '',
+  email:      '',
 };
 
+/**
+ * Derive 1–2 uppercase initials from a full name for the avatar bubble.
+ * @param {string} name - User's display name
+ */
 function getInitials(name) {
   return (name || '?')
     .split(' ')
@@ -60,42 +56,67 @@ function getInitials(name) {
     .toUpperCase();
 }
 
-// ─── Modal ────────────────────────────────────────────────────────────────────
+// ─── UserModal ────────────────────────────────────────────────────────────────
+/**
+ * UserModal — a shared modal for both creating new users and editing existing ones.
+ * Determines its mode based on whether editUser is provided.
+ *
+ * Props:
+ *   editUser    The user object to edit (undefined/null = create mode)
+ *   currentUser The currently logged-in admin (used to prevent self-demotion, etc.)
+ *   onClose     Callback to close the modal without saving
+ *   onSaved     Callback called with (savedUser, isEdit) after a successful save
+ */
 function UserModal({ editUser, currentUser, onClose, onSaved }) {
-  const isEdit = !!editUser;
+  const isEdit = !!editUser; // true = editing an existing user, false = creating new
+
+  // Pre-fill form with existing data when editing; clear password field for security
   const [form, setForm] = useState(
     isEdit ? { ...editUser, password: '' } : EMPTY_FORM,
   );
-  const [showPw, setShowPw] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const firstRef = useRef(null);
+  const [showPw, setShowPw] = useState(false);  // toggle password visibility
+  const [saving, setSaving] = useState(false);  // true while API request is in flight
+  const [error, setError]   = useState('');     // validation or API error message
 
+  // Focus the first input when the modal opens
+  const firstRef = useRef(null);
   useEffect(() => {
     firstRef.current?.focus();
   }, []);
 
+  /**
+   * Update a single field in the form and clear any existing error.
+   * @param {string} k - Field name
+   * @param {any} v - New value
+   */
   const set = (k, v) => {
     setForm((f) => ({ ...f, [k]: v }));
     setError('');
   };
 
+  /**
+   * Validate and submit the form.
+   * When editing, if the password field is left empty, the field is omitted
+   * from the payload so the existing password is not overwritten.
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name.trim()) return setError('Name is required');
+    // Client-side validation
+    if (!form.name.trim())     return setError('Name is required');
     if (!form.username.trim()) return setError('Username is required');
-    if (!isEdit && !form.password.trim())
-      return setError('Password is required for new accounts');
-    if (!form.role) return setError('Role is required');
+    if (!isEdit && !form.password.trim()) return setError('Password is required for new accounts');
+    if (!form.role)            return setError('Role is required');
+
     setSaving(true);
     setError('');
     try {
       const payload = { ...form };
+      // Don't send an empty password on edit — keep the server's existing hash
       if (isEdit && !payload.password.trim()) delete payload.password;
       const saved = isEdit
         ? await api.updateUser(editUser.id, payload)
         : await api.createUser(payload);
-      onSaved(saved, isEdit);
+      onSaved(saved, isEdit); // parent updates the local user list
     } catch (err) {
       setError(extractError(err));
     } finally {
@@ -103,6 +124,7 @@ function UserModal({ editUser, currentUser, onClose, onSaved }) {
     }
   };
 
+  // Role badge colors for the role selector preview
   const roleInfo = ROLE_LABELS[form.role];
 
   return (
@@ -375,28 +397,38 @@ function extractError(err) {
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
+/**
+ * UsersPage — the user management screen (admin only).
+ *
+ * Lists all registered users with their role, department, and division.
+ * Allows the admin to create, edit, or delete users.
+ * Access is enforced by ProtectedRoute in App.jsx (only 'admin' role can reach this page).
+ */
 export default function UsersPage() {
-  const { user: currentUser } = useAuth();
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState('all');
-  const [modal, setModal] = useState(null); // null | 'create' | { user }
-  const [delTarget, setDelTarget] = useState(null);
-  const [delLoading, setDelLoading] = useState(false);
+  const { user: currentUser } = useAuth(); // the logged-in admin
 
+  // ── State ──────────────────────────────────────────────────────────────────
+  const [users, setUsers]       = useState([]);    // full list of registered users
+  const [loading, setLoading]   = useState(true);  // true during initial fetch
+  const [search, setSearch]     = useState('');    // text search (name, username, dept, position)
+  const [roleFilter, setRoleFilter] = useState('all'); // 'all' or a specific role value
+  const [modal, setModal]       = useState(null);  // null | 'create' | { user } (edit)
+  const [delTarget, setDelTarget] = useState(null); // user object pending deletion, or null
+  const [delLoading, setDelLoading] = useState(false); // true while delete request is in flight
+
+  /** Fetch the full user list from the API */
   const load = async () => {
     try {
       setUsers(await api.getUsers());
     } catch {
+      // Silently fail — the empty list state is shown
     } finally {
       setLoading(false);
     }
   };
-  useEffect(() => {
-    load();
-  }, []);
+  useEffect(() => { load(); }, []);
 
+  // Apply text search and role filter to the user list
   const filtered = users.filter((u) => {
     const q = search.toLowerCase();
     const matchSearch =
@@ -409,13 +441,24 @@ export default function UsersPage() {
     return matchSearch && matchRole;
   });
 
+  /**
+   * Called by UserModal after a successful save.
+   * Updates the local users list without a full refetch.
+   * @param {object} saved - The saved user object returned by the API
+   * @param {boolean} isEdit - true = update existing; false = append new
+   */
   const handleSaved = (saved, isEdit) => {
     if (isEdit)
       setUsers((us) => us.map((u) => (u.id === saved.id ? saved : u)));
-    else setUsers((us) => [...us, saved]);
+    else
+      setUsers((us) => [...us, saved]);
     setModal(null);
   };
 
+  /**
+   * Execute the user deletion after the admin confirms in the dialog.
+   * Removes the user from the local list on success.
+   */
   const handleDelete = async () => {
     if (!delTarget) return;
     setDelLoading(true);
@@ -430,6 +473,7 @@ export default function UsersPage() {
     }
   };
 
+  // Count admins — used to warn before deleting the last admin account
   const adminCount = users.filter((u) => u.role === 'admin').length;
 
   return (

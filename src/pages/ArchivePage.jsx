@@ -26,10 +26,24 @@ import DateFilter, {
   usePersistentDateFilter,
 } from '../components/DateFilter';
 
+/**
+ * ArchivePage — shows findings that have been completed (all checklist items done).
+ *
+ * A finding moves here automatically when every checklist item is checked.
+ * Authorised users (manager and above) can restore a finding to Active status.
+ *
+ * Supports date range filtering (persisted to sessionStorage) and text search.
+ */
 export default function ArchivePage() {
   const { findings, updateFinding, showToast } = useFindings();
+
+  // Date range filter — persisted per page under 'archive-date'
   const [dateRange, setDateRange] = usePersistentDateFilter('archive-date');
+
+  // Text search query — filters by finding name and description
   const [search, setSearch] = useState('');
+
+  // Filtered subset: completed findings within the selected date range matching the search
   const archived = findings.filter(
     (f) =>
       isCompleted(f) &&
@@ -38,7 +52,14 @@ export default function ArchivePage() {
         (f.description || '').toLowerCase().includes(search.toLowerCase())),
   );
 
+  /**
+   * Restore a completed finding to active status.
+   * Unchecks the last checklist item so isCompleted() returns false,
+   * which moves the finding back to the Findings page.
+   * @param {object} f - The archived finding to restore
+   */
   const restore = async (f) => {
+    // Un-tick the last checklist item — this breaks the "all done" condition
     const cl = (f.checklist || []).map((c, i, a) =>
       i === a.length - 1 ? { ...c, done: false } : c,
     );

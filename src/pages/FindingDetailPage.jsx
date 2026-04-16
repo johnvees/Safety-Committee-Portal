@@ -6,68 +6,127 @@ import { getType, getPriority, getProgress, getDaysLeft, isCompleted, formatCurr
 import DiscussionPanel from '../components/DiscussionPanel'
 import { ArrowLeft, Check, Calendar, MapPin, User, DollarSign, History, AlertTriangle, CheckCircle2, Trash2, X } from 'lucide-react'
 
+/**
+ * FindingDetailPage — full read-only view for a single finding.
+ *
+ * Accessed via /findings/:id. Supports deep-linking via ?focus= query param:
+ * navigating from a notification can scroll and highlight a specific section
+ * (checklist, cost, deadline, or discussion).
+ *
+ * Features:
+ *   - All finding metadata (type, priority, area, assigned, reporter, dates)
+ *   - Checklist with toggle (triggers archive confirmation when all items done)
+ *   - Photo lightbox
+ *   - Cost breakdown (estimated + actual line items)
+ *   - Follow-up log
+ *   - DiscussionPanel (discussion thread)
+ *   - Delete button (permission-guarded)
+ */
 export default function FindingDetailPage() {
-  const { id } = useParams()
+  const { id } = useParams()                        // finding ID from the URL segment
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const [searchParams] = useSearchParams()           // ?focus= query param for deep-link scrolling
   const { findings, updateFinding, deleteFinding, showToast, photoCache, fetchPhotos } = useFindings()
   const { hasPermission } = useAuth()
-  const [lightbox, setLightbox] = useState(null)
-  const [archiveConfirm, setArchiveConfirm] = useState(null)
-  const [deleteConfirm, setDeleteConfirm] = useState(false)
-  const [deleteLoading, setDeleteLoading] = useState(false)
-  const [flashSection, setFlashSection] = useState(null)
 
-  const checklistRef = useRef(null)
-  const costRef = useRef(null)
-  const deadlineRef = useRef(null)
+  // ── UI state ───────────────────────────────────────────────────────────────
+  const [lightbox, setLightbox]           = useState(null)   // full-screen photo URL, or null
+  const [archiveConfirm, setArchiveConfirm] = useState(null) // { name, onConfirm } or null
+  const [deleteConfirm, setDeleteConfirm] = useState(false)  // controls delete confirmation dialog
+  const [deleteLoading, setDeleteLoading] = useState(false)  // true while delete API call is in flight
+  const [flashSection, setFlashSection]   = useState(null)   // 'checklist'|'cost'|'deadline'|'discussion'|null
+
+  // ── Section refs for scroll+highlight deep-linking ────────────────────────
+  const checklistRef  = useRef(null)
+  const costRef       = useRef(null)
+  const deadlineRef   = useRef(null)
   const discussionRef = useRef(null)
 
-  const f = findings.find(fi=>fi.id===Number(id))
+  // Look up the finding from context by numeric ID
+  const f = findings.find(fi => fi.id === Number(id))
+
+  // Photos for this finding (from lazy cache; falls back to empty array)
   const photos = photoCache[Number(id)] || []
 
-  // Warm the cache for this finding if not already loaded
+  // Warm the photo cache for this finding as soon as the page mounts
   useEffect(() => {
     if (id) fetchPhotos(Number(id))
   }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Handle ?focus= deep-link: scroll to and flash-highlight the target section
   useEffect(() => {
     const focus = searchParams.get('focus')
     if (!focus) return
-    const refMap = { checklist: checklistRef, cost: costRef, deadline: deadlineRef, discussion: discussionRef }
+    const refMap = {
+      checklist:  checklistRef,
+      cost:       costRef,
+      deadline:   deadlineRef,
+      discussion: discussionRef,
+    }
     const ref = refMap[focus]
     if (!ref?.current) return
+    // Small delay lets the page render before attempting scroll
     const t1 = setTimeout(() => {
       ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      setFlashSection(focus)
+      setFlashSection(focus) // trigger the CSS flash animation
     }, 300)
-    const t2 = setTimeout(() => setFlashSection(null), 3300)
+    const t2 = setTimeout(() => setFlashSection(null), 3300) // stop flashing after ~3s
     return () => { clearTimeout(t1); clearTimeout(t2) }
   }, [searchParams])
 
-  if(!f) return <div className="text-center py-24 text-gray-500"><AlertTriangle size={48} className="mx-auto mb-4 opacity-40" /><p className="text-lg">Finding not found.</p><Link to="/findings" className="text-indigo-400 text-base mt-3 inline-block">← Back</Link></div>
+  // Show a not-found state if the ID doesn't match any loaded finding
+  if (!f) return (
+    <div className="text-center py-24 text-gray-500">
+      <AlertTriangle size={48} className="mx-auto mb-4 opacity-40" />
+      <p className="text-lg">Finding not found.</p>
+      <Link to="/findings" className="text-indigo-400 text-base mt-3 inline-block">← Back</Link>
+    </div>
+  )
 
-  const type=getType(f.type), pri=getPriority(f.priority), prog=getProgress(f.checklist), days=getDaysLeft(f.deadline), od=days!==null&&days<0&&!isCompleted(f), done=isCompleted(f), TypeIcon=type?.icon||AlertTriangle
+  // ── Derived display values ─────────────────────────────────────────────────
+  const type     = getType(f.type)
+  const pri      = getPriority(f.priority)
+  const prog     = getProgress(f.checklist)
+  const days     = getDaysLeft(f.deadline)
+  const od       = days !== null && days < 0 && !isCompleted(f) // is overdue?
+  const done     = isCompleted(f)
+  const TypeIcon = type?.icon || AlertTriangle
 
+  /**
+   * Toggle a checklist item on the detail page.
+   * If all items would be done after the toggle, shows archive confirmation first.
+   */
   const toggleCheck = async (cid) => {
-    const cl=f.checklist.map(c=>c.id===cid?{...c,done:!c.done}:c); const willDone=cl.length>0&&cl.every(c=>c.done)
-    if(willDone) {
-      setArchiveConfirm({ name: f.name, onConfirm: async () => { await updateFinding(f.id,{...f,checklist:cl}); showToast('Completed → Archived','success') } })
+    const cl = f.checklist.map(c => c.id === cid ? { ...c, done: !c.done } : c)
+    const willDone = cl.length > 0 && cl.every(c => c.done)
+    if (willDone) {
+      setArchiveConfirm({ name: f.name, onConfirm: async () => { await updateFinding(f.id, { ...f, checklist: cl }); showToast('Completed → Archived', 'success') } })
       return
     }
-    try { await updateFinding(f.id,{...f,checklist:cl}) } catch { showToast('Failed','error') }
-  }
-  const confirmArchive = async () => {
-    if(!archiveConfirm) return
-    try { await archiveConfirm.onConfirm() } catch { showToast('Failed','error') }
-    setArchiveConfirm(null)
-  }
-  const handleDelete = () => setDeleteConfirm(true)
-  const confirmDelete = async () => {
-    setDeleteLoading(true)
-    try { await deleteFinding(f.id); navigate('/findings') } catch { showToast('Failed','error') } finally { setDeleteLoading(false); setDeleteConfirm(false) }
+    try { await updateFinding(f.id, { ...f, checklist: cl }) } catch { showToast('Failed', 'error') }
   }
 
+  /** Execute the archive after the user confirms in the dialog */
+  const confirmArchive = async () => {
+    if (!archiveConfirm) return
+    try { await archiveConfirm.onConfirm() } catch { showToast('Failed', 'error') }
+    setArchiveConfirm(null)
+  }
+
+  /** Open the delete confirmation dialog */
+  const handleDelete = () => setDeleteConfirm(true)
+
+  /** Execute delete and navigate back to the findings list on success */
+  const confirmDelete = async () => {
+    setDeleteLoading(true)
+    try { await deleteFinding(f.id); navigate('/findings') } catch { showToast('Failed', 'error') } finally { setDeleteLoading(false); setDeleteConfirm(false) }
+  }
+
+  /**
+   * Returns the CSS class for a flash highlight animation if the given section
+   * is the currently targeted deep-link section.
+   * @param {string} section - 'checklist'|'cost'|'deadline'|'discussion'
+   */
   const flash = (section) => flashSection === section ? 'section-flash' : ''
 
   return (

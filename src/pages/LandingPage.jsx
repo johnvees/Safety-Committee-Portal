@@ -343,15 +343,35 @@ const STEPS = [
 ];
 
 // ─── Component ───────────────────────────────────────────
+/**
+ * LandingPage — the public marketing/introduction page shown before login.
+ * Contains: sticky navbar, animated hero, scrolling ticker, stats counter,
+ * HSE pillars section, platform modules grid, how-it-works steps, CTA banner, footer.
+ *
+ * Props:
+ *   onLogin  Callback invoked when any "Sign In" button is clicked.
+ *            Switches to LoginPage via AuthGate (no navigation required).
+ */
 export default function LandingPage({ onLogin }) {
-  const [hlIdx, setHlIdx] = useState(0);
-  const [hlKey, setHlKey] = useState(0);
-  const [statsOn, setStatsOn] = useState(false);
-  const [counts, setCounts] = useState(STATS.map(() => 0));
+  // ── Rotating headline state ────────────────────────────────────────────────
+  const [hlIdx, setHlIdx] = useState(0);  // index of the currently displayed headline
+  const [hlKey, setHlKey] = useState(0);  // incremented on each rotation to re-trigger CSS animation
+
+  // ── Stats counter animation state ──────────────────────────────────────────
+  const [statsOn, setStatsOn]   = useState(false);              // true once the stats section enters the viewport
+  const [counts, setCounts]     = useState(STATS.map(() => 0)); // animated current value for each stat
+
+  // ── Mouse glow effect state ────────────────────────────────────────────────
+  // Tracks cursor position over module cards; { [moduleId]: { x, y } | null }
   const [mouseMap, setMouseMap] = useState({});
-  const [scrollY, setScrollY] = useState(0);
+
+  // ── Parallax scroll state ──────────────────────────────────────────────────
+  const [scrollY, setScrollY] = useState(0); // window.scrollY, updated on scroll for floating particles
+
+  // Ref attached to the stats section — used by IntersectionObserver to trigger the counter
   const statsRef = useRef(null);
 
+  // The phrases that cycle in the hero sub-headline
   const HEADLINES = [
     'Occupational Safety',
     'Employee Health',
@@ -359,7 +379,7 @@ export default function LandingPage({ onLogin }) {
     'HSE Compliance',
   ];
 
-  // Headline rotation
+  // Rotate the hero headline every 3 seconds; incrementing hlKey forces the fade-in animation to replay
   useEffect(() => {
     const t = setInterval(() => {
       setHlIdx((i) => (i + 1) % HEADLINES.length);
@@ -368,20 +388,20 @@ export default function LandingPage({ onLogin }) {
     return () => clearInterval(t);
   }, []);
 
-  // Parallax scroll
+  // Track scroll position for the floating particles parallax effect
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY);
-    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true }); // passive = no blocking
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Stat counter trigger
+  // Start the stat counter animation once the stats section scrolls into view (≥30% visible)
   useEffect(() => {
     const obs = new IntersectionObserver(
       ([e]) => {
         if (e.isIntersecting) {
           setStatsOn(true);
-          obs.disconnect();
+          obs.disconnect(); // only trigger once
         }
       },
       { threshold: 0.3 },
@@ -390,42 +410,50 @@ export default function LandingPage({ onLogin }) {
     return () => obs.disconnect();
   }, []);
 
+  // Run the eased counter animation over 1800ms using requestAnimationFrame
   useEffect(() => {
     if (!statsOn) return;
-    const duration = 1800;
+    const duration = 1800; // total animation duration in ms
     const start = performance.now();
     const tick = (now) => {
-      const p = Math.min((now - start) / duration, 1);
-      const ease = 1 - Math.pow(1 - p, 3);
+      const p    = Math.min((now - start) / duration, 1); // progress 0 → 1
+      const ease = 1 - Math.pow(1 - p, 3);               // cubic ease-out curve
       setCounts(STATS.map((s) => Math.floor(ease * s.target)));
-      if (p < 1) requestAnimationFrame(tick);
+      if (p < 1) requestAnimationFrame(tick); // keep going until done
     };
     requestAnimationFrame(tick);
   }, [statsOn]);
 
-  // Scroll reveal
+  // Scroll-reveal: add 'revealed' class to elements with class 'reveal' when they enter the viewport
   useEffect(() => {
     const obs = new IntersectionObserver(
       (entries) =>
         entries.forEach((e) => {
           if (e.isIntersecting) {
             e.target.classList.add('revealed');
-            obs.unobserve(e.target);
+            obs.unobserve(e.target); // only animate once per element
           }
         }),
-      { threshold: 0.1 },
+      { threshold: 0.1 }, // trigger when 10% of the element is visible
     );
     document.querySelectorAll('.reveal').forEach((el) => obs.observe(el));
     return () => obs.disconnect();
   }, []);
 
+  /**
+   * Track mouse position relative to a module card for the spotlight glow effect.
+   * @param {MouseEvent} e
+   * @param {string} id - Module ID (used as the key in mouseMap)
+   */
   const handleCardMouse = (e, id) => {
     const r = e.currentTarget.getBoundingClientRect();
     setMouseMap((m) => ({
       ...m,
-      [id]: { x: e.clientX - r.left, y: e.clientY - r.top },
+      [id]: { x: e.clientX - r.left, y: e.clientY - r.top }, // position relative to card
     }));
   };
+
+  /** Clear the glow position when the mouse leaves a module card */
   const clearCardMouse = (id) => setMouseMap((m) => ({ ...m, [id]: null }));
 
   return (

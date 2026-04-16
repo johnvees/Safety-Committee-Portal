@@ -8,102 +8,248 @@ import { FINDING_TYPES, PRIORITY_LEVELS, getType, getPriority, getProgress, getD
 import DiscussionPanel from '../components/DiscussionPanel'
 import DateFilter, { matchesDateFilter, usePersistentDateFilter } from '../components/DateFilter'
 
+/**
+ * FindingsPage — the main list of all active (non-completed) findings.
+ *
+ * Core features:
+ *   - List of finding cards with type, priority, progress bar, checklist, photos, discussion
+ *   - Add / Edit finding modal (same form reused for both)
+ *   - Delete finding with confirmation dialog
+ *   - Archive confirmation when all checklist items are checked
+ *   - Photo upload (base64, stored with the finding)
+ *   - Cost breakdown (estimated + actual line items)
+ *   - Follow-up log (timestamped notes)
+ *   - Date range filter + text search + type filter
+ */
 export default function FindingsPage() {
   const { findings, loading, showToast, createFinding, updateFinding, deleteFinding, photoCache, fetchPhotos } = useFindings()
   const { user, hasPermission } = useAuth()
-  const [showModal, setShowModal] = useState(false)
-  const [editId, setEditId] = useState(null)
-  const [search, setSearch] = useState('')
-  const [filterType, setFilterType] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [lightbox, setLightbox] = useState(null)
-  const [archiveConfirm, setArchiveConfirm] = useState(null)
-  const [deleteTarget, setDeleteTarget] = useState(null)
-  const [deleteLoading, setDeleteLoading] = useState(false)
-  const [dateRange, setDateRange] = usePersistentDateFilter('findings-date')
 
-  const emptyForm = { name:'',type:'',priority:'medium',description:'',findingDate:'',deadline:'',area:'',reportedBy:'',assignedTo:'',costRequired:false,costItems:[],actualCostItems:[],costNotes:'',photos:[],checklist:[],discussions:[],followUps:[],notifications:[] }
+  // ── Modal & list UI state ──────────────────────────────────────────────────
+  const [showModal, setShowModal]         = useState(false)  // controls the Add/Edit modal
+  const [editId, setEditId]               = useState(null)   // null = new finding; string = editing existing
+  const [search, setSearch]               = useState('')     // text search query
+  const [filterType, setFilterType]       = useState('')     // active type filter ('' = all)
+  const [saving, setSaving]               = useState(false)  // true while save request is in flight
+  const [lightbox, setLightbox]           = useState(null)   // URL of photo to show in lightbox, or null
+  const [archiveConfirm, setArchiveConfirm] = useState(null) // { name, onConfirm } or null
+  const [deleteTarget, setDeleteTarget]   = useState(null)   // { id, name } of finding to delete, or null
+  const [deleteLoading, setDeleteLoading] = useState(false)  // true while delete request is in flight
+  const [dateRange, setDateRange]         = usePersistentDateFilter('findings-date')
+
+  // ── Form state ─────────────────────────────────────────────────────────────
+  // Default/blank form state — used to initialise new findings and to reset after save
+  const emptyForm = {
+    name: '', type: '', priority: 'medium', description: '',
+    findingDate: '', deadline: '', area: '', reportedBy: '', assignedTo: '',
+    costRequired: false, costItems: [], actualCostItems: [], costNotes: '',
+    photos: [], checklist: [], discussions: [], followUps: [], notifications: [],
+  }
   const [form, setForm] = useState(emptyForm)
-  const [newCheck, setNewCheck] = useState('')
-  const [newFollowUp, setNewFollowUp] = useState('')
-  const [newCostItem, setNewCostItem] = useState({ description:'', sku:'', qty:'', unitCost:'' })
-  const [newActualItem, setNewActualItem] = useState({ description:'', sku:'', qty:'', unitCost:'' })
+
+  // Pending input values for the "add item" rows (not yet committed to form arrays)
+  const [newCheck, setNewCheck]         = useState('')
+  const [newFollowUp, setNewFollowUp]   = useState('')
+  const [newCostItem, setNewCostItem]   = useState({ description: '', sku: '', qty: '', unitCost: '' })
+  const [newActualItem, setNewActualItem] = useState({ description: '', sku: '', qty: '', unitCost: '' })
+
+  // Hidden file input — triggered programmatically by the photo upload area click
   const fileRef = useRef(null)
 
+  // ── Derived lists ──────────────────────────────────────────────────────────
+  // Only show active (non-completed) findings on this page; completed go to Archive
   const active = findings.filter(f => !isCompleted(f))
+
+  // Apply search text, type filter, and date range on top of the active list
   const filtered = active.filter(f => {
-    const ms = f.name.toLowerCase().includes(search.toLowerCase()) || (f.description||'').toLowerCase().includes(search.toLowerCase())
+    const ms = f.name.toLowerCase().includes(search.toLowerCase()) ||
+               (f.description || '').toLowerCase().includes(search.toLowerCase())
     return ms && (!filterType || f.type === filterType) && matchesDateFilter(f.createdAt, dateRange)
   })
 
   // Lazy-load photos for every visible finding; no-op if already cached
+  // Dependency is the list of IDs as a string to avoid re-running on unrelated state changes
   useEffect(() => {
     findings.forEach(f => fetchPhotos(f.id))
   }, [findings.map(f => f.id).join(',')])  // eslint-disable-line react-hooks/exhaustive-deps
 
-  const resetForm = () => { setForm(emptyForm); setNewCheck(''); setNewFollowUp(''); setNewCostItem({description:'',sku:'',qty:'',unitCost:''}); setNewActualItem({description:'',sku:'',qty:'',unitCost:''}); setEditId(null) }
+  // ── Form helpers ───────────────────────────────────────────────────────────
+
+  /** Reset all form fields and pending-input states back to their defaults */
+  const resetForm = () => {
+    setForm(emptyForm)
+    setNewCheck('')
+    setNewFollowUp('')
+    setNewCostItem({ description: '', sku: '', qty: '', unitCost: '' })
+    setNewActualItem({ description: '', sku: '', qty: '', unitCost: '' })
+    setEditId(null)
+  }
+
+  /** Open the modal for creating a new finding */
   const openNew = () => { resetForm(); setShowModal(true) }
+
+  /**
+   * Open the modal pre-filled with an existing finding's data.
+   * Photos are read from the cache if available, otherwise fetched from the API.
+   */
   const openEdit = async (f) => {
     // Use cache if ready, otherwise fetch (cache warms on mount so usually instant)
     const cachedPhotos = photoCache[f.id]
-    const photos = cachedPhotos !== undefined ? cachedPhotos : await api.getFinding(f.id).then(r => r.photos || []).catch(() => [])
-    setForm({ name:f.name, type:f.type, priority:f.priority, description:f.description, findingDate:f.findingDate||'', deadline:f.deadline, area:f.area||'', reportedBy:f.reportedBy||'', assignedTo:f.assignedTo||'', costRequired:f.costRequired||false, costItems:(f.costItems||[]).map(c=>({...c})), actualCostItems:(f.actualCostItems||[]).map(c=>({...c})), costNotes:f.costNotes||'', photos:[...photos], checklist:(f.checklist||[]).map(c=>({...c})), discussions:(f.discussions||[]).map(d=>({...d})), followUps:(f.followUps||[]).map(fu=>({...fu})), notifications:f.notifications||[] })
-    setEditId(f.id); setShowModal(true)
+    const photos = cachedPhotos !== undefined
+      ? cachedPhotos
+      : await api.getFinding(f.id).then(r => r.photos || []).catch(() => [])
+    setForm({
+      name: f.name, type: f.type, priority: f.priority, description: f.description,
+      findingDate: f.findingDate || '', deadline: f.deadline, area: f.area || '',
+      reportedBy: f.reportedBy || '', assignedTo: f.assignedTo || '',
+      costRequired: f.costRequired || false,
+      costItems: (f.costItems || []).map(c => ({ ...c })),
+      actualCostItems: (f.actualCostItems || []).map(c => ({ ...c })),
+      costNotes: f.costNotes || '',
+      photos: [...photos],
+      checklist: (f.checklist || []).map(c => ({ ...c })),
+      discussions: (f.discussions || []).map(d => ({ ...d })),
+      followUps: (f.followUps || []).map(fu => ({ ...fu })),
+      notifications: f.notifications || [],
+    })
+    setEditId(f.id)
+    setShowModal(true)
   }
-  const addCheckItem = () => { if(!newCheck.trim()) return; setForm(p=>({...p,checklist:[...p.checklist,{id:Date.now(),text:newCheck.trim(),done:false}]})); setNewCheck('') }
-  const addFollowUpItem = () => { if(!newFollowUp.trim()) return; setForm(p=>({...p,followUps:[...p.followUps,{id:Date.now(),date:new Date().toISOString(),note:newFollowUp.trim(),by:user?.name||'Admin'}]})); setNewFollowUp('') }
-  const addCostItem = () => {
-    if(!newCostItem.description.trim()||!newCostItem.qty||!newCostItem.unitCost) return
-    const qty=Number(newCostItem.qty); const unitCost=Number(newCostItem.unitCost)
-    setForm(p=>({...p,costItems:[...p.costItems,{id:Date.now(),description:newCostItem.description.trim(),sku:newCostItem.sku.trim(),qty,unitCost,totalCost:qty*unitCost}]}))
-    setNewCostItem({description:'',sku:'',qty:'',unitCost:''})
-  }
-  const addActualCostItem = () => {
-    if(!newActualItem.description.trim()||!newActualItem.qty||!newActualItem.unitCost) return
-    const qty=Number(newActualItem.qty); const unitCost=Number(newActualItem.unitCost)
-    setForm(p=>({...p,actualCostItems:[...p.actualCostItems,{id:Date.now(),description:newActualItem.description.trim(),sku:newActualItem.sku.trim(),qty,unitCost,totalCost:qty*unitCost}]}))
-    setNewActualItem({description:'',sku:'',qty:'',unitCost:''})
-  }
-  const handlePhoto = (e) => { Array.from(e.target.files||[]).forEach(file=>{const r=new FileReader();r.onload=(ev)=>setForm(p=>({...p,photos:[...p.photos,{id:Date.now()+Math.random(),url:ev.target.result,name:file.name,uploadedAt:new Date().toISOString(),uploadedBy:user?.name||''}]}));r.readAsDataURL(file)}); e.target.value='' }
 
-  const doSave = async (payload) => {
-    if(editId) { const ex=findings.find(f=>f.id===editId); await updateFinding(editId,{...ex,...payload,id:editId}); showToast('Finding updated successfully!','success') }
-    else { await createFinding(payload) }
-    setShowModal(false); resetForm()
+  /** Add a checklist item to the form (Enter key or Add button) */
+  const addCheckItem = () => {
+    if (!newCheck.trim()) return
+    setForm(p => ({ ...p, checklist: [...p.checklist, { id: Date.now(), text: newCheck.trim(), done: false }] }))
+    setNewCheck('')
   }
+
+  /** Add a follow-up note to the form — automatically stamps date and actor name */
+  const addFollowUpItem = () => {
+    if (!newFollowUp.trim()) return
+    setForm(p => ({ ...p, followUps: [...p.followUps, { id: Date.now(), date: new Date().toISOString(), note: newFollowUp.trim(), by: user?.name || 'Admin' }] }))
+    setNewFollowUp('')
+  }
+
+  /** Add an estimated cost line item to the form, computing totalCost = qty × unitCost */
+  const addCostItem = () => {
+    if (!newCostItem.description.trim() || !newCostItem.qty || !newCostItem.unitCost) return
+    const qty = Number(newCostItem.qty)
+    const unitCost = Number(newCostItem.unitCost)
+    setForm(p => ({ ...p, costItems: [...p.costItems, { id: Date.now(), description: newCostItem.description.trim(), sku: newCostItem.sku.trim(), qty, unitCost, totalCost: qty * unitCost }] }))
+    setNewCostItem({ description: '', sku: '', qty: '', unitCost: '' })
+  }
+
+  /** Add an actual cost line item (same logic as addCostItem but for actualCostItems) */
+  const addActualCostItem = () => {
+    if (!newActualItem.description.trim() || !newActualItem.qty || !newActualItem.unitCost) return
+    const qty = Number(newActualItem.qty)
+    const unitCost = Number(newActualItem.unitCost)
+    setForm(p => ({ ...p, actualCostItems: [...p.actualCostItems, { id: Date.now(), description: newActualItem.description.trim(), sku: newActualItem.sku.trim(), qty, unitCost, totalCost: qty * unitCost }] }))
+    setNewActualItem({ description: '', sku: '', qty: '', unitCost: '' })
+  }
+
+  /**
+   * Handle photo file selection.
+   * Converts each selected file to a base64 data URL and appends it to form.photos.
+   * Clears the file input so the same file can be selected again if needed.
+   */
+  const handlePhoto = (e) => {
+    Array.from(e.target.files || []).forEach(file => {
+      const r = new FileReader()
+      r.onload = (ev) => setForm(p => ({
+        ...p,
+        photos: [...p.photos, {
+          id: Date.now() + Math.random(),
+          url: ev.target.result,  // base64 data URL
+          name: file.name,
+          uploadedAt: new Date().toISOString(),
+          uploadedBy: user?.name || '',
+        }],
+      }))
+      r.readAsDataURL(file)
+    })
+    e.target.value = '' // reset so the same file can be re-selected
+  }
+
+  /**
+   * Perform the actual API call (create or update).
+   * Called directly or via the archive confirmation dialog.
+   */
+  const doSave = async (payload) => {
+    if (editId) {
+      const ex = findings.find(f => f.id === editId)
+      await updateFinding(editId, { ...ex, ...payload, id: editId })
+      showToast('Finding updated successfully!', 'success')
+    } else {
+      await createFinding(payload) // creates + shows its own "saved" toast
+    }
+    setShowModal(false)
+    resetForm()
+  }
+
+  /**
+   * Validate and prepare the form for saving.
+   * If all checklist items are done (would trigger archive), shows a confirmation first.
+   * Otherwise calls doSave directly.
+   */
   const save = async () => {
-    if(!form.name||!form.type) return; setSaving(true)
-    const estimatedCost = (form.costItems||[]).reduce((s,c)=>s+(c.totalCost||0),0)
-    const actualCost = (form.actualCostItems||[]).length>0 ? (form.actualCostItems||[]).reduce((s,c)=>s+(c.totalCost||0),0) : null
-    const payload = {...form, estimatedCost, actualCost}
-    const willArchive = editId && (payload.checklist||[]).length>0 && (payload.checklist||[]).every(c=>c.done)
-    if(willArchive) {
+    if (!form.name || !form.type) return
+    setSaving(true)
+    // Calculate totals from line items
+    const estimatedCost = (form.costItems || []).reduce((s, c) => s + (c.totalCost || 0), 0)
+    const actualCost = (form.actualCostItems || []).length > 0
+      ? (form.actualCostItems || []).reduce((s, c) => s + (c.totalCost || 0), 0)
+      : null
+    const payload = { ...form, estimatedCost, actualCost }
+    // Check if saving would complete all checklist items and trigger archive
+    const willArchive = editId && (payload.checklist || []).length > 0 && (payload.checklist || []).every(c => c.done)
+    if (willArchive) {
       setSaving(false)
       setArchiveConfirm({ name: payload.name, onConfirm: () => doSave(payload) })
       return
     }
-    try { await doSave(payload) } catch { showToast('Failed to save.','error') } finally { setSaving(false) }
+    try { await doSave(payload) } catch { showToast('Failed to save.', 'error') } finally { setSaving(false) }
   }
+
+  /** Open the delete confirmation dialog for a specific finding */
   const handleDelete = (id, name) => setDeleteTarget({ id, name })
+
+  /** Execute the delete after the user confirms in the dialog */
   const confirmDelete = async () => {
     if (!deleteTarget) return
     setDeleteLoading(true)
-    try { await deleteFinding(deleteTarget.id) } catch { showToast('Failed.','error') } finally { setDeleteLoading(false); setDeleteTarget(null) }
+    try { await deleteFinding(deleteTarget.id) } catch { showToast('Failed.', 'error') } finally { setDeleteLoading(false); setDeleteTarget(null) }
   }
+
+  /**
+   * Toggle a single checklist item on a card (without opening the modal).
+   * If toggling the last unchecked item completes the checklist, shows the
+   * archive confirmation dialog before saving.
+   */
   const toggleCheck = async (finding, checkId) => {
-    const cl=finding.checklist.map(c=>c.id===checkId?{...c,done:!c.done}:c); const willDone=cl.length>0&&cl.every(c=>c.done)
-    if(willDone) {
-      setArchiveConfirm({ name: finding.name, onConfirm: async () => { await updateFinding(finding.id,{...finding,checklist:cl}); showToast(`"${finding.name}" completed → Archived`,'success') } })
+    const cl = finding.checklist.map(c => c.id === checkId ? { ...c, done: !c.done } : c)
+    const willDone = cl.length > 0 && cl.every(c => c.done) // will this complete the finding?
+    if (willDone) {
+      setArchiveConfirm({
+        name: finding.name,
+        onConfirm: async () => {
+          await updateFinding(finding.id, { ...finding, checklist: cl })
+          showToast(`"${finding.name}" completed → Archived`, 'success')
+        },
+      })
       return
     }
-    try { await updateFinding(finding.id,{...finding,checklist:cl}) } catch { showToast('Failed','error') }
+    try { await updateFinding(finding.id, { ...finding, checklist: cl }) } catch { showToast('Failed', 'error') }
   }
+
+  /** Execute the archive after the user confirms in the dialog */
   const confirmArchive = async () => {
-    if(!archiveConfirm) return
-    try { await archiveConfirm.onConfirm() } catch { showToast('Failed','error') }
+    if (!archiveConfirm) return
+    try { await archiveConfirm.onConfirm() } catch { showToast('Failed', 'error') }
     setArchiveConfirm(null)
   }
-  // ── Input style (reusable) ──
+
+  // Shared Tailwind class for all form <input> and <select> elements in the modal
   const inp = "w-full px-4 py-3 bg-dark-900 border border-dark-700 rounded-xl text-base text-gray-200 outline-none transition placeholder-gray-600"
 
   return (

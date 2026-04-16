@@ -5,21 +5,49 @@ import { FINDING_TYPES, getType, getDaysLeft, isCompleted, formatCurrency } from
 import DateFilter, { matchesDateFilter, usePersistentDateFilter } from '../components/DateFilter'
 import { useNotif } from '../context/NotifContext'
 
+/**
+ * DashboardPage — the main overview screen.
+ *
+ * Displays summary statistics, a findings-by-category breakdown, affected areas,
+ * a cost overview, overdue findings, and quick-links to other pages.
+ *
+ * All metrics are computed from the findings array filtered by the selected date range.
+ * The date range persists to sessionStorage (via usePersistentDateFilter) so it
+ * survives navigation away and back.
+ */
 export default function DashboardPage() {
   const { findings, loading } = useFindings()
   const { unreadCount: unreadNotifs } = useNotif()
+
+  // Date range filter — persisted to sessionStorage under the key 'dashboard-date'
   const [dateRange, setDateRange] = usePersistentDateFilter('dashboard-date')
 
-  const filtered = findings.filter(f => matchesDateFilter(f.createdAt, dateRange))
-  const active = filtered.filter(f => !isCompleted(f))
+  // ── Derived metrics (recalculated on every render from findings + dateRange) ──
+  // All metrics operate on this filtered subset — respects the selected date range
+  const filtered   = findings.filter(f => matchesDateFilter(f.createdAt, dateRange))
+
+  // Separate active vs completed (archived) findings
+  const active   = filtered.filter(f => !isCompleted(f))
   const archived = filtered.filter(f => isCompleted(f))
-  const overdue = active.filter(f => getDaysLeft(f.deadline) !== null && getDaysLeft(f.deadline) < 0)
-  const totalEstCost = filtered.reduce((s, f) => s + (f.estimatedCost || 0), 0)
-  const withActual = filtered.filter(f => f.actualCost)
-  const totalActCost = withActual.reduce((s, f) => s + f.actualCost, 0)
-  const totalCostDiff = withActual.reduce((s, f) => s + (f.actualCost - (f.estimatedCost || 0)), 0)
+
+  // Active findings whose deadline has already passed
+  const overdue  = active.filter(f => getDaysLeft(f.deadline) !== null && getDaysLeft(f.deadline) < 0)
+
+  // Cost summaries — only findings where costRequired = true contribute
+  const totalEstCost  = filtered.reduce((s, f) => s + (f.estimatedCost || 0), 0)
+  const withActual    = filtered.filter(f => f.actualCost) // findings that have actual cost recorded
+  const totalActCost  = withActual.reduce((s, f) => s + f.actualCost, 0)
+  const totalCostDiff = withActual.reduce((s, f) => s + (f.actualCost - (f.estimatedCost || 0)), 0) // positive = over budget
+
+  // Unique affected areas (location strings), undefined/null excluded
   const areas = [...new Set(filtered.map(f => f.area).filter(Boolean))]
-  const typeBreakdown = FINDING_TYPES.map(t => ({ ...t, count: filtered.filter(f => f.type === t.value).length, activeCount: active.filter(f => f.type === t.value).length }))
+
+  // Per-category counts for the bar chart — each entry has total count + active count
+  const typeBreakdown = FINDING_TYPES.map(t => ({
+    ...t,
+    count:       filtered.filter(f => f.type === t.value).length,
+    activeCount: active.filter(f => f.type === t.value).length,
+  }))
 
   if (loading) return <div className="flex items-center justify-center py-32 text-gray-400 text-lg"><Clock size={28} className="animate-spin mr-3" /> Loading data...</div>
 

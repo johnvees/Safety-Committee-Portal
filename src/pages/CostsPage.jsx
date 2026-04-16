@@ -22,16 +22,36 @@ import DateFilter, {
   usePersistentDateFilter,
 } from '../components/DateFilter';
 
+/**
+ * CostsPage — a financial summary of all findings that have repair cost data.
+ *
+ * Shows:
+ *   - Summary cards: total estimate, total actual, number of findings with cost,
+ *     number of over-budget findings
+ *   - A table with one row per finding, expandable to show the cost line-item breakdown
+ *   - Variance (actual − estimate) per finding and as a total
+ *
+ * Only findings with costRequired = true appear here.
+ * Supports date range filter (persisted) and text search.
+ */
 export default function CostsPage() {
   const { findings } = useFindings();
   const navigate = useNavigate();
+
+  // Date range filter — persisted to sessionStorage under 'costs-date'
   const [dateRange, setDateRange] = usePersistentDateFilter('costs-date');
+
+  // Text search — matches finding name, area, or cost notes
   const [search, setSearch] = useState('');
+
+  // Tracks which table rows have been expanded to show the cost breakdown
+  // Shape: { [findingId]: boolean }
   const [expanded, setExpanded] = useState({});
 
+  // ── Derived data ───────────────────────────────────────────────────────────
+  // Findings with repair costs that match the date range and search query
   const withCost = findings.filter((f) => {
-    if (!f.costRequired || !matchesDateFilter(f.createdAt, dateRange))
-      return false;
+    if (!f.costRequired || !matchesDateFilter(f.createdAt, dateRange)) return false;
     if (!search) return true;
     const q = search.toLowerCase();
     return (
@@ -40,17 +60,31 @@ export default function CostsPage() {
       (f.costNotes || '').toLowerCase().includes(q)
     );
   });
+
+  // Sum of all estimated costs across visible findings
   const totalEst = withCost.reduce((s, f) => s + (f.estimatedCost || 0), 0);
+
+  // Only findings that also have actual cost data recorded
   const withActual = withCost.filter((f) => f.actualCost);
+
+  // Sum of actual costs (only for findings that have it)
   const totalAct = withActual.reduce((s, f) => s + f.actualCost, 0);
+
+  // Total variance: positive = over budget overall, negative = under budget
   const totalDiff = withActual.reduce(
     (s, f) => s + (f.actualCost - (f.estimatedCost || 0)),
     0,
   );
+
+  // Findings where actual cost exceeded the original estimate
   const overBudget = withCost.filter(
     (f) => f.actualCost && f.actualCost > f.estimatedCost,
   );
 
+  /**
+   * Toggle the expanded/collapsed state of a cost detail row.
+   * @param {string} id - Finding ID
+   */
   const toggleExpand = (id) =>
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
 

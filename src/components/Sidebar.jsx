@@ -7,28 +7,50 @@ import { useTheme } from '../context/ThemeContext'
 import { useAuth, ROLE_LABELS } from '../context/AuthContext'
 import { useNotif } from '../context/NotifContext'
 
+/**
+ * Sidebar — the main navigation rail on the left side of the dashboard.
+ *
+ * Behaviour:
+ *   - Desktop: collapsible between a 64px wide icon rail and a full 256px panel.
+ *   - Mobile: hidden off-screen, toggled by a floating button (top-left).
+ *             Tapping the dark overlay closes it.
+ *
+ * Shows only the nav links the current user has access to (via canAccessPage).
+ * The Notifications link shows a badge with the unread count.
+ */
 export default function Sidebar() {
   const { sidebarOpen, setSidebarOpen, isDark, toggleTheme } = useTheme()
   const { user, logout, canAccessPage } = useAuth()
   const location = useLocation()
 
+  // Total unread notifications — displayed as a badge on the Bell link
   const { unreadCount: unreadNotifs } = useNotif()
 
+  // Full list of nav links. Each entry maps to one sidebar item.
+  // 'page' matches the keys in PAGE_ACCESS (AuthContext) for access control.
   const allLinks = [
-    { to: '/', icon: LayoutDashboard, label: 'Dashboard', badge: null, page: 'dashboard' },
-    { to: '/findings', icon: ClipboardList, label: 'Findings', badge: null, page: 'findings' },
-    { to: '/archive', icon: Archive, label: 'Archive', badge: null, page: 'archive' },
-    { to: '/costs', icon: DollarSign, label: 'Costs', badge: null, page: 'costs' },
-    { to: '/guidelines', icon: BookOpen, label: 'Guideline', badge: null, page: 'guidelines' },
-    { to: '/notifications', icon: Bell, label: 'Notifications', badge: unreadNotifs || null, page: 'notifications' },
-    { to: '/users', icon: Users, label: 'Users', badge: null, page: 'users' },
+    { to: '/',              icon: LayoutDashboard, label: 'Dashboard',     badge: null,                page: 'dashboard'     },
+    { to: '/findings',      icon: ClipboardList,   label: 'Findings',      badge: null,                page: 'findings'      },
+    { to: '/archive',       icon: Archive,          label: 'Archive',       badge: null,                page: 'archive'       },
+    { to: '/costs',         icon: DollarSign,       label: 'Costs',         badge: null,                page: 'costs'         },
+    { to: '/guidelines',    icon: BookOpen,         label: 'Guideline',     badge: null,                page: 'guidelines'    },
+    { to: '/notifications', icon: Bell,             label: 'Notifications', badge: unreadNotifs || null, page: 'notifications' },
+    { to: '/users',         icon: Users,            label: 'Users',         badge: null,                page: 'users'         },
   ]
+
+  // Filter to only links the current user's role can access
   const links = allLinks.filter(l => canAccessPage(l.page))
 
+  // Role badge metadata (color, label) for the user footer in the sidebar
   const roleInfo = user ? (ROLE_LABELS[user.role] || ROLE_LABELS.viewer) : null
+
+  // Derive 1–2 letter initials from the user's full name (e.g. "John Doe" → "JD")
   const initials = user ? user.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : 'U'
 
+  /** Toggle sidebar open/closed */
   const toggle = () => setSidebarOpen(o => !o)
+
+  /** Close sidebar on mobile after the user navigates to a page */
   const closeMobile = () => { if (window.innerWidth < 768) setSidebarOpen(false) }
 
   return (

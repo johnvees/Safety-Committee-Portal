@@ -5,17 +5,35 @@ import { useAuth } from '../context/AuthContext'
 import { useFindings } from '../context/FindingsContext'
 import { api } from '../api'
 
+// Fixed palette of 8 colors used for avatar backgrounds.
+// Deterministically assigned based on the person's name so the same
+// person always gets the same color across sessions.
 const avatarColors = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#0ea5e9', '#8b5cf6', '#14b8a6']
+
+/**
+ * Derive a consistent avatar background color from a display name.
+ * Uses a djb2-style hash so the same name always maps to the same color.
+ * @param {string} name - User's display name
+ * @returns {string} Hex color string
+ */
 const getAvatarColor = (name) => {
   let hash = 0
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
   return avatarColors[Math.abs(hash) % avatarColors.length]
 }
+
+/**
+ * Extract 1–2 uppercase initials from a full name.
+ * e.g. "John Doe" → "JD", "Alice" → "A"
+ */
 const getInitials = (n) => n.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
 
-// Render message text, highlighting @mentions
+/**
+ * MessageText — renders a comment string with @mention highlighting.
+ * Splits the text on @word tokens and wraps each mention in a styled <span>.
+ */
 function MessageText({ text }) {
-  const parts = text.split(/(@\w+)/g)
+  const parts = text.split(/(@\w+)/g) // split preserving the capture group
   return (
     <p className="text-base text-gray-300 leading-relaxed whitespace-pre-wrap break-words">
       {parts.map((part, i) =>
@@ -27,25 +45,50 @@ function MessageText({ text }) {
   )
 }
 
+/**
+ * DiscussionPanel — collapsible comment thread for a single finding.
+ *
+ * Features:
+ *   - Collapsible (click header to toggle)
+ *   - @mention autocomplete (type @ to open a user picker)
+ *   - Keyboard navigation in the mention dropdown (↑ ↓ Enter Escape)
+ *   - Enter to send, Shift+Enter inserts a newline
+ *   - Admin or comment author can delete their own messages
+ *   - autoOpen: when true the panel opens and pulses briefly (used from FindingDetailPage)
+ *
+ * Props:
+ *   finding    The finding object whose discussions array we're rendering
+ *   autoOpen   If true, open and animate the panel on mount
+ */
 export default function DiscussionPanel({ finding, autoOpen = false }) {
   const { user } = useAuth()
   const { updateFinding, showToast } = useFindings()
-  const [isOpen, setIsOpen] = useState(autoOpen)
-  const [flashing, setFlashing] = useState(autoOpen)
-  const [message, setMessage] = useState('')
-  const [sending, setSending] = useState(false)
-  const [users, setUsers] = useState([])
-  const [mentionQuery, setMentionQuery] = useState(null)
-  const [mentionIndex, setMentionIndex] = useState(0)
-  const listRef = useRef(null)
-  const inputRef = useRef(null)
-  const dropdownRef = useRef(null)
+
+  // ── UI state ───────────────────────────────────────────────────────────────
+  const [isOpen, setIsOpen]   = useState(autoOpen)  // whether the panel body is visible
+  const [flashing, setFlashing] = useState(autoOpen) // drives the pulse animation on first open
+  const [message, setMessage] = useState('')         // current input value
+  const [sending, setSending] = useState(false)      // true while the save request is in flight
+
+  // ── @mention state ─────────────────────────────────────────────────────────
+  const [users, setUsers]             = useState([])   // all registered users (for autocomplete)
+  const [mentionQuery, setMentionQuery] = useState(null) // text after '@' (null = not in mention mode)
+  const [mentionIndex, setMentionIndex] = useState(0)   // highlighted item in the dropdown
+
+  // ── Refs ───────────────────────────────────────────────────────────────────
+  const listRef     = useRef(null) // scrollable message list — used to auto-scroll to bottom
+  const inputRef    = useRef(null) // text input — used to restore focus after inserting a mention
+  const dropdownRef = useRef(null) // mention dropdown — used to scroll the highlighted item into view
+
+  // Extract the discussions array (default to empty array if missing)
   const discussions = finding.discussions || []
 
+  // Fetch all users once on mount for the @mention autocomplete
   useEffect(() => {
     api.getUsers().then(setUsers).catch(() => {})
   }, [])
 
+  // When autoOpen becomes true, open the panel and start the pulse animation for 3 seconds
   useEffect(() => {
     if (!autoOpen) return
     setIsOpen(true)
@@ -54,18 +97,21 @@ export default function DiscussionPanel({ finding, autoOpen = false }) {
     return () => clearTimeout(t)
   }, [autoOpen])
 
+  // Auto-scroll the message list to the newest message when the panel opens or a new message arrives
   useEffect(() => {
     if (isOpen && listRef.current) {
       listRef.current.scrollTop = listRef.current.scrollHeight
     }
   }, [discussions.length, isOpen])
 
+  // Keep the highlighted mention dropdown item scrolled into view when the index changes
   useEffect(() => {
     if (!dropdownRef.current) return
     const item = dropdownRef.current.children[mentionIndex]
     item?.scrollIntoView({ block: 'nearest' })
   }, [mentionIndex])
 
+  // Users to display in the mention dropdown — excludes self, filtered by query, max 6
   const filteredUsers = mentionQuery !== null
     ? users.filter(u =>
         u.username !== user?.username &&
@@ -74,32 +120,44 @@ export default function DiscussionPanel({ finding, autoOpen = false }) {
       ).slice(0, 6)
     : []
 
+  /**
+   * Handle every keystroke in the comment input.
+   * Detects when the user types '@' followed by characters and opens the mention dropdown.
+   * Clears mentionQuery when the cursor moves away from the @-token.
+   */
   const handleChange = (e) => {
     const val = e.target.value
     setMessage(val)
     const pos = e.target.selectionStart
     const beforeCursor = val.slice(0, pos)
-    const match = beforeCursor.match(/@(\w*)$/)
+    const match = beforeCursor.match(/@(\w*)$/) // look for @word immediately before cursor
     if (match) {
       setMentionQuery(match[1].toLowerCase())
-      setMentionIndex(0)
+      setMentionIndex(0) // reset selection when query changes
     } else {
-      setMentionQuery(null)
+      setMentionQuery(null) // close dropdown if no @-token
     }
   }
 
+  /**
+   * Insert a selected username mention into the input at the cursor position.
+   * Replaces the partial @query with @username (space-padded) and restores focus.
+   * @param {string} username - The username to insert (without @)
+   */
   const insertMention = useCallback((username) => {
     const input = inputRef.current
     if (!input) return
     const pos = input.selectionStart
     const beforeCursor = message.slice(0, pos)
-    const afterCursor = message.slice(pos)
+    const afterCursor  = message.slice(pos)
     const match = beforeCursor.match(/@(\w*)$/)
     if (!match) return
+    // Replace the partial @query with the full @username + space
     const newBefore = beforeCursor.slice(0, match.index) + `@${username} `
     const newMsg = newBefore + afterCursor
     setMessage(newMsg)
     setMentionQuery(null)
+    // Restore cursor position after the inserted mention (async to let React update first)
     setTimeout(() => {
       input.focus()
       const newPos = newBefore.length
@@ -107,6 +165,11 @@ export default function DiscussionPanel({ finding, autoOpen = false }) {
     }, 0)
   }, [message])
 
+  /**
+   * Handle keyboard events in the comment input.
+   * When the mention dropdown is open: ↑/↓ navigate, Enter selects, Escape closes.
+   * Outside mention mode: Enter (without Shift) sends the message.
+   */
   const handleKeyDown = (e) => {
     if (mentionQuery !== null && filteredUsers.length > 0) {
       if (e.key === 'ArrowDown') { e.preventDefault(); setMentionIndex(i => Math.min(i + 1, filteredUsers.length - 1)); return }
@@ -114,13 +177,20 @@ export default function DiscussionPanel({ finding, autoOpen = false }) {
       if (e.key === 'Enter')     { e.preventDefault(); insertMention(filteredUsers[mentionIndex].username); return }
       if (e.key === 'Escape')    { setMentionQuery(null); return }
     }
+    // Enter without Shift = send; Shift+Enter = newline (default textarea behaviour)
     if (e.key === 'Enter' && !e.shiftKey) handleSend()
   }
 
+  /**
+   * Post a new comment on the finding.
+   * Also creates @mention notifications for any users tagged in the message.
+   * Updates the finding via context (which calls the API and refreshes state).
+   */
   const handleSend = async () => {
     if (!message.trim()) return
     setSending(true)
 
+    // Build the new comment object
     const comment = {
       id: Date.now(),
       author: user?.name || 'Anonim',
@@ -129,18 +199,19 @@ export default function DiscussionPanel({ finding, autoOpen = false }) {
       timestamp: new Date().toISOString(),
     }
 
-    // Extract unique @mentions, exclude self
+    // Parse all @mentions from the message, deduplicate, exclude the sender
     const mentionedUsernames = [
       ...new Set((message.trim().match(/@(\w+)/g) || []).map(m => m.slice(1)))
     ].filter(u => u !== user?.username)
 
+    // Build a targeted notification for each mentioned user
     const mentionNotifs = mentionedUsernames.map(username => ({
       id: `mention-${Date.now()}-${username}-${Math.random().toString(36).slice(2)}`,
       type: 'mention',
       message: `${user?.name || 'Someone'} mentioned you in "${finding.name}"`,
       date: new Date().toISOString(),
       read: false,
-      targetUsername: username,
+      targetUsername: username, // this ensures only the tagged user sees it
     }))
 
     try {
@@ -153,11 +224,17 @@ export default function DiscussionPanel({ finding, autoOpen = false }) {
       showToast('Failed to send comment', 'error')
     }
 
+    // Reset input state after sending
     setMessage('')
     setMentionQuery(null)
     setSending(false)
   }
 
+  /**
+   * Delete a comment from the discussion thread.
+   * Only the comment author and admins can do this (guarded in the JSX below).
+   * @param {number} cid - The comment's numeric id field
+   */
   const handleDeleteComment = async (cid) => {
     try {
       await updateFinding(finding.id, {

@@ -2,14 +2,27 @@ import { useState } from 'react'
 import { AlertTriangle, User, Lock, LogIn, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
+/**
+ * LoginPage — the username/password login form.
+ * Shown after the user clicks "Sign In" on LandingPage.
+ * On successful login, AuthContext updates the user state and AppInner
+ * automatically re-renders to show the main dashboard layout.
+ */
 export default function LoginPage() {
   const { login } = useAuth()
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPw, setShowPw] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
 
+  // ── Form state ─────────────────────────────────────────────────────────────
+  const [username, setUsername] = useState('')   // controlled input value
+  const [password, setPassword] = useState('')   // controlled input value
+  const [showPw, setShowPw]     = useState(false) // toggle plain text / password masking
+  const [loading, setLoading]   = useState(false) // true while the login request is in flight
+  const [error, setError]       = useState('')    // error message shown below the form
+
+  /**
+   * Handle form submission.
+   * Validates that both fields are filled, then calls the login API.
+   * Maps HTTP 401 to a user-friendly "wrong credentials" message.
+   */
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!username.trim() || !password.trim()) {
@@ -20,7 +33,9 @@ export default function LoginPage() {
     setError('')
     try {
       await login(username.trim(), password)
+      // On success, AuthProvider sets the user state → AppInner unmounts this page
     } catch (err) {
+      // 401 = wrong credentials; anything else = server/network problem
       setError(err.message?.includes('401') ? 'Incorrect username or password' : 'Failed to connect to server')
     } finally {
       setLoading(false)

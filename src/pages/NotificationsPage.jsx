@@ -8,6 +8,10 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import DateFilter, { matchesDateFilter, usePersistentDateFilter } from '../components/DateFilter'
 
+/**
+ * Category filter pills shown at the top of the notifications page.
+ * 'types: null' means show all notification types (no type filtering).
+ */
 const CATEGORIES = [
   { key: 'all',      label: 'All',      types: null },
   { key: 'urgent',   label: 'Urgent',   types: ['overdue', 'deadline_warning', 'deadline_updated'] },
@@ -17,6 +21,11 @@ const CATEGORIES = [
   { key: 'deleted',  label: 'Deleted',  types: ['deleted'] },
 ]
 
+/**
+ * Maps a notification type to the ?focus= query param value used in FindingDetailPage.
+ * Clicking a notification navigates to /findings/:id?focus=<section> which
+ * scrolls and highlights the relevant section on the detail page.
+ */
 const FOCUS_MAP = {
   checklist:        'checklist',
   completed:        'checklist',
@@ -27,23 +36,47 @@ const FOCUS_MAP = {
   mention:          'discussion',
 }
 
+// How many "already read" notifications to show per "load more" click
 const READ_PAGE_SIZE = 10
 
+/**
+ * NotificationsPage — the full notification inbox for the logged-in user.
+ *
+ * Notification sources:
+ *   - Stored notifications embedded in findings (system events + @mentions)
+ *   - Auto-generated overdue and deadline-warning notifications (computed on the fly)
+ *   - Deletion log entries (global audit trail)
+ *
+ * Unread notifications are shown first in a dedicated section.
+ * Read/dismissed notifications are in a collapsed section with pagination.
+ * Clicking a notification navigates to the relevant finding section.
+ */
 export default function NotificationsPage() {
   const { findings, deletionLog } = useFindings()
   const { user } = useAuth()
   const { dismissed, readSet, dismiss, markRead, isRead } = useNotif()
   const navigate = useNavigate()
+
+  // Date range filter — persisted under 'notifications-date'
   const [dateRange, setDateRange] = usePersistentDateFilter('notifications-date')
-  const [showRead, setShowRead] = useState(false)
-  const [readVisible, setReadVisible] = useState(READ_PAGE_SIZE)
+
+  // Whether the "already read" section is expanded
+  const [showRead, setShowRead]         = useState(false)
+  // How many read notifications are currently visible (pagination)
+  const [readVisible, setReadVisible]   = useState(READ_PAGE_SIZE)
+  // Active category filter pill ('all', 'urgent', 'mention', etc.)
   const [activeCategory, setActiveCategory] = useState('all')
 
+  /**
+   * Dismiss a notification (hides it permanently for this user).
+   * Stops propagation so the click doesn't also navigate to the finding.
+   */
   const deleteNotif = (e, n) => {
     e.stopPropagation()
     dismiss(n.id)
   }
 
+  /** Dismiss all notifications that are already in the "read" list */
   const deleteAllRead = () => {
     dismiss(...read.map(n => n.id))
   }

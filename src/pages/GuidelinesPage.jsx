@@ -6,38 +6,71 @@ import {
   Globe, Flag, Filter, Upload, Eye,
 } from 'lucide-react';
 
+/**
+ * Regulation scope options — used as filter pills and as a field in the upload form.
+ * national = Indonesian (Kemenaker, KLHK, etc.), international = ISO standards, etc.
+ */
 const SCOPES = [
-  { value: 'national', label: 'National', icon: Flag, color: '#f59e0b' },
+  { value: 'national',      label: 'National',      icon: Flag,  color: '#f59e0b' },
   { value: 'international', label: 'International', icon: Globe, color: '#6366f1' },
 ];
 
+/**
+ * Document categories — mirrors FINDING_TYPES plus a catch-all "General".
+ * Allows documents to be linked to a specific finding type (Safety, Quality, etc.).
+ */
 const DOC_CATEGORIES = [
   ...FINDING_TYPES.map(t => ({ value: t.value, label: t.short, color: t.color, icon: t.icon })),
   { value: 'general', label: 'General', color: '#6b7280', icon: BookOpen },
 ];
 
-const emptyDoc = { title: '', description: '', scope: 'national', category: 'safety', fileName: '', fileUrl: '', fileType: '' };
+// Blank/default state for the upload form
+const emptyDoc = {
+  title: '', description: '', scope: 'national', category: 'safety',
+  fileName: '', fileUrl: '', fileType: '',
+};
 
+/**
+ * GuidelinesPage — a document library for SOPs, HSE regulations, and guidelines.
+ *
+ * Documents are stored as base64 data URLs (fileUrl) in the backend.
+ * To keep the list fast, fileUrl is stripped when loading the list — it is
+ * fetched only when the user clicks "Open" (lazy loading per document).
+ *
+ * Features:
+ *   - Upload PDF/document files with title, scope, category
+ *   - Search and filter by scope and category
+ *   - Open (view in new tab) or download documents
+ *   - Delete with confirmation
+ */
 export default function GuidelinesPage() {
-  const [docs, setDocs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState(emptyDoc);
-  const [saving, setSaving] = useState(false);
-  const [search, setSearch] = useState('');
-  const [filterScope, setFilterScope] = useState('');
-  const [filterCategory, setFilterCategory] = useState('');
-  const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [opening, setOpening] = useState(null); // doc id being opened
+  const [docs, setDocs]               = useState([]);    // list of guideline documents (without fileUrl)
+  const [loading, setLoading]         = useState(true);  // true during initial fetch
+  const [showModal, setShowModal]     = useState(false); // controls the upload modal
+  const [form, setForm]               = useState(emptyDoc);
+  const [saving, setSaving]           = useState(false); // true while upload API call is in flight
+  const [search, setSearch]           = useState('');    // text search query
+  const [filterScope, setFilterScope] = useState('');    // '' = all scopes
+  const [filterCategory, setFilterCategory] = useState(''); // '' = all categories
+  const [deleteConfirm, setDeleteConfirm] = useState(null); // doc object to confirm deletion, or null
+  const [opening, setOpening]         = useState(null);  // ID of doc being fetched for viewing
+
+  // Hidden file input — triggered by the upload area click
   const fileRef = useRef(null);
 
+  // Fetch the document list on mount.
+  // Strip fileUrl from each entry — base64 file content is only loaded when "Open" is clicked.
   useEffect(() => {
-    // Strip fileUrl on load — only fetch file data lazily when user clicks Open
     api.getGuidelineDocs()
       .then(data => setDocs(data.map(({ fileUrl, ...rest }) => rest)))
       .finally(() => setLoading(false));
   }, []);
 
+  /**
+   * Handle file selection in the upload form.
+   * Reads the file as a base64 data URL and stores it in form.fileUrl.
+   * Also auto-fills the title from the filename if the title field is empty.
+   */
   const handleFile = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -46,15 +79,19 @@ export default function GuidelinesPage() {
       setForm(p => ({
         ...p,
         fileName: file.name,
-        fileUrl: ev.target.result,
+        fileUrl: ev.target.result,   // base64 data URL of the file
         fileType: file.type,
-        title: p.title || file.name.replace(/\.[^.]+$/, ''),
+        title: p.title || file.name.replace(/\.[^.]+$/, ''), // strip extension for title
       }));
     };
     reader.readAsDataURL(file);
-    e.target.value = '';
+    e.target.value = ''; // reset so same file can be re-selected
   };
 
+  /**
+   * Save/upload a new guideline document.
+   * Requires a title and a selected file before sending to the API.
+   */
   const save = async () => {
     if (!form.title.trim() || !form.fileUrl) return;
     setSaving(true);

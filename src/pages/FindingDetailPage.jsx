@@ -34,13 +34,16 @@ export default function FindingDetailPage() {
   const [archiveConfirm, setArchiveConfirm] = useState(null) // { name, onConfirm } or null
   const [deleteConfirm, setDeleteConfirm] = useState(false)  // controls delete confirmation dialog
   const [deleteLoading, setDeleteLoading] = useState(false)  // true while delete API call is in flight
-  const [flashSection, setFlashSection]   = useState(null)   // 'checklist'|'cost'|'deadline'|'discussion'|null
+  const [flashSection, setFlashSection]   = useState(null)   // 'header'|'checklist'|'cost'|'deadline'|'discussion'|'photos'|null
 
   // ── Section refs for scroll+highlight deep-linking ────────────────────────
+  const headerRef     = useRef(null)
   const checklistRef  = useRef(null)
   const costRef       = useRef(null)
   const deadlineRef   = useRef(null)
   const discussionRef = useRef(null)
+  const photosRef     = useRef(null)
+  const followupRef   = useRef(null)
 
   // Look up the finding from context by numeric ID
   const f = findings.find(fi => fi.id === Number(id))
@@ -53,26 +56,37 @@ export default function FindingDetailPage() {
     if (id) fetchPhotos(Number(id))
   }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Handle ?focus= deep-link: scroll to and flash-highlight the target section
+  // Handle ?focus= deep-link: scroll to and flash-highlight the target section.
+  // Photos focus gets a longer delay to allow the async photo cache to populate.
   useEffect(() => {
     const focus = searchParams.get('focus')
     if (!focus) return
     const refMap = {
+      header:     headerRef,
       checklist:  checklistRef,
       cost:       costRef,
       deadline:   deadlineRef,
       discussion: discussionRef,
+      photos:     photosRef,
+      followup:   followupRef,
     }
     const ref = refMap[focus]
-    if (!ref?.current) return
-    // Small delay lets the page render before attempting scroll
+    const delay = focus === 'photos' ? 700 : 300  // photos load async — give cache time to populate
     const t1 = setTimeout(() => {
-      ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      setFlashSection(focus) // trigger the CSS flash animation
-    }, 300)
-    const t2 = setTimeout(() => setFlashSection(null), 3300) // stop flashing after ~3s
+      if (ref?.current) ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      setFlashSection(focus) // trigger the CSS pulse animation
+    }, delay)
+    const t2 = setTimeout(() => setFlashSection(null), delay + 4000) // stop after full 3-pulse cycle
     return () => { clearTimeout(t1); clearTimeout(t2) }
   }, [searchParams])
+
+  // Secondary scroll for photos focus: if photos weren't cached when the effect ran,
+  // scroll once the photos section actually renders (photosRef becomes available).
+  useEffect(() => {
+    if (flashSection === 'photos' && photosRef.current) {
+      photosRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [photos.length, flashSection]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Show a not-found state if the ID doesn't match any loaded finding
   if (!f) return (
@@ -133,16 +147,22 @@ export default function FindingDetailPage() {
     <div className="space-y-6 max-w-4xl">
       <style>{`
         @keyframes section-flash {
-          0%,100% { box-shadow:none; }
-          20%,60%  { box-shadow:0 0 0 3px #6366f1, 0 0 18px 2px #6366f140; }
-          40%,80%  { box-shadow:0 0 0 1px #6366f160; }
+          0%        { box-shadow: none; }
+          15%, 55%  { box-shadow: 0 0 0 3px #6366f1, 0 0 28px 8px #6366f145, inset 0 0 0 1px #6366f130; }
+          30%, 70%  { box-shadow: 0 0 0 1px #6366f170, 0 0 10px 2px #6366f120; }
+          85%       { box-shadow: 0 0 0 2px #6366f190, 0 0 20px 4px #6366f130; }
+          100%      { box-shadow: none; }
         }
-        .section-flash { animation: section-flash 1.5s ease 2; }
+        .section-flash {
+          animation: section-flash 1.3s cubic-bezier(0.4,0,0.6,1) 3;
+          border-color: #6366f160 !important;
+          transition: border-color 0.3s ease;
+        }
       `}</style>
       <button onClick={()=>navigate(-1)} className="text-base text-gray-400 hover:text-gray-200 flex items-center gap-2 transition font-medium"><ArrowLeft size={18} /> Back</button>
 
-      {/* Header */}
-      <div className="bg-dark-800 border border-dark-700 rounded-2xl p-7" style={{borderLeftWidth:5,borderLeftColor:od?'#ef4444':type?.color}}>
+      {/* Header — flashes on focus=header (created / updated notifications) */}
+      <div ref={headerRef} className={`bg-dark-800 border border-dark-700 rounded-2xl p-7 ${flash('header')}`} style={{borderLeftWidth:5,borderLeftColor:od?'#ef4444':type?.color}}>
         <div className="flex items-start gap-5">
           <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0" style={{background:type?.color+'18',color:type?.color}}><TypeIcon size={28} /></div>
           <div className="flex-1 min-w-0">
@@ -281,8 +301,8 @@ export default function FindingDetailPage() {
           )}
         </div>
 
-        {/* Follow-ups */}
-        <div className="bg-dark-800 border border-dark-700 rounded-2xl p-6">
+        {/* Follow-ups — flashes on focus=followup (followup_updated notifications) */}
+        <div ref={followupRef} className={`bg-dark-800 border border-dark-700 rounded-2xl p-6 ${flash('followup')}`}>
           <h3 className="text-lg font-bold text-gray-100 mb-4 flex items-center gap-2"><History size={20} className="text-cyan-400" /> Follow-up</h3>
           {(f.followUps||[]).length===0 ? <p className="text-base text-gray-500">No follow-ups yet.</p> : (
             <div className="space-y-3">
@@ -297,9 +317,9 @@ export default function FindingDetailPage() {
         </div>
       </div>
 
-      {/* Photos */}
+      {/* Photos — flashes on focus=photos (photo_updated notifications) */}
       {photos?.length>0 && (
-        <div className="bg-dark-800 border border-dark-700 rounded-2xl p-6">
+        <div ref={photosRef} className={`bg-dark-800 border border-dark-700 rounded-2xl p-6 ${flash('photos')}`}>
           <h3 className="text-lg font-bold text-gray-100 mb-4">Photos</h3>
           <div className="flex gap-4 flex-wrap">
             {photos.map(p => (

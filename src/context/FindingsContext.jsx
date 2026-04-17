@@ -25,8 +25,39 @@ function buildUpdateNotifications(old, data, actorName) {
   const notifs = []
   const by = actorName ? ` by ${actorName}` : '' // suffix for notification messages
 
-  // Checklist item changes — one notification per toggled item
+  // Checklist changes — additions, removals, and toggles
   if (old.checklist && data.checklist) {
+    // Items present in the new list but absent from the old list → added
+    const addedItems = data.checklist.filter(c => !old.checklist.find(p => p.id === c.id))
+    if (addedItems.length > 0) {
+      notifs.push({
+        id: uid(),
+        type: 'checklist',
+        message: addedItems.length === 1
+          ? `Checklist item "${addedItems[0].text}" added to "${data.name}"${by}`
+          : `${addedItems.length} checklist items added to "${data.name}"${by}`,
+        date: now(),
+        read: false,
+        targetRule: 'all',
+      })
+    }
+
+    // Items present in the old list but absent from the new list → removed
+    const removedItems = old.checklist.filter(p => !data.checklist.find(c => c.id === p.id))
+    if (removedItems.length > 0) {
+      notifs.push({
+        id: uid(),
+        type: 'checklist',
+        message: removedItems.length === 1
+          ? `Checklist item "${removedItems[0].text}" removed from "${data.name}"${by}`
+          : `${removedItems.length} checklist items removed from "${data.name}"${by}`,
+        date: now(),
+        read: false,
+        targetRule: 'all',
+      })
+    }
+
+    // Existing items whose done-state changed → toggled
     data.checklist.forEach(c => {
       const prev = old.checklist.find(p => p.id === c.id)
       if (prev && prev.done !== c.done) {
@@ -36,9 +67,39 @@ function buildUpdateNotifications(old, data, actorName) {
           message: `Item "${c.text}" in "${data.name}" has been ${c.done ? 'completed ✓' : 'unchecked'}${by}`,
           date: now(),
           read: false,
-          targetRule: 'all', // visible to all users
+          targetRule: 'all',
         })
       }
+    })
+  }
+
+  // Follow-up changes — additions and removals
+  const oldFU = old.followUps || []
+  const newFU = data.followUps || []
+  const addedFU   = newFU.filter(fu => !oldFU.find(p => p.id === fu.id))
+  const removedFU = oldFU.filter(fu => !newFU.find(p => p.id === fu.id))
+  if (addedFU.length > 0) {
+    notifs.push({
+      id: uid(),
+      type: 'followup_updated',
+      message: addedFU.length === 1
+        ? `Follow-up added to "${data.name}"${by}: "${addedFU[0].note?.slice(0, 60)}${addedFU[0].note?.length > 60 ? '…' : ''}"`
+        : `${addedFU.length} follow-ups added to "${data.name}"${by}`,
+      date: now(),
+      read: false,
+      targetRule: 'all',
+    })
+  }
+  if (removedFU.length > 0) {
+    notifs.push({
+      id: uid(),
+      type: 'followup_updated',
+      message: removedFU.length === 1
+        ? `Follow-up removed from "${data.name}"${by}`
+        : `${removedFU.length} follow-ups removed from "${data.name}"${by}`,
+      date: now(),
+      read: false,
+      targetRule: 'all',
     })
   }
 
@@ -253,6 +314,35 @@ export function FindingsProvider({ children }) {
       newNotifs = buildUpdateNotifications(old, data, user?.name)
     }
 
+    // Photo change notification — photos are stripped from findings state so we
+    // compare data.photos (incoming save) against the photo cache (current truth).
+    if (data.photos !== undefined) {
+      const oldPhotos = photoCacheRef.current[id] || []
+      const newPhotos = data.photos || []
+      const diff = newPhotos.length - oldPhotos.length
+      const by = user?.name ? ` by ${user.name}` : ''
+      if (diff > 0) {
+        newNotifs.push({
+          id: uid(),
+          type: 'photo_updated',
+          message: `${diff} photo${diff > 1 ? 's' : ''} added to "${data.name}"${by}`,
+          date: now(),
+          read: false,
+          targetRule: 'all',
+        })
+      } else if (diff < 0) {
+        const removed = Math.abs(diff)
+        newNotifs.push({
+          id: uid(),
+          type: 'photo_updated',
+          message: `${removed} photo${removed > 1 ? 's' : ''} removed from "${data.name}"${by}`,
+          date: now(),
+          read: false,
+          targetRule: 'all',
+        })
+      }
+    }
+
     // Merge new auto-notifications with any manually attached ones (e.g. @mentions)
     const existingNotifs = data.notifications || []
     const merged = newNotifs.length > 0
@@ -265,10 +355,13 @@ export function FindingsProvider({ children }) {
     // them into subsequent PATCH bodies and cause thumbnails to blink on SSE refresh.
     const { photos: _, ...updatedWithoutPhotos } = updated
 
-    // If photos were included in this save (e.g. edit form), refresh the photo cache
-    if (updated.photos !== undefined) {
-      photoCacheRef.current[id] = updated.photos
-      setPhotoCache(prev => ({ ...prev, [id]: updated.photos }))
+    // Update the photo cache from data.photos (what we actually saved) because
+    // the backend strips photos from PATCH responses just like the list endpoint.
+    // Fall back to updated.photos if for some reason data.photos was not included.
+    const newCachedPhotos = data.photos ?? updated.photos
+    if (newCachedPhotos !== undefined) {
+      photoCacheRef.current[id] = newCachedPhotos
+      setPhotoCache(prev => ({ ...prev, [id]: newCachedPhotos }))
     }
     setFindings(prev => prev.map(f => f.id === id ? updatedWithoutPhotos : f))
     return updated

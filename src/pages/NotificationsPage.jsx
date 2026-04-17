@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { useNotif } from '../context/NotifContext'
 import { matchesNotifUser } from '../utils/notifUtils'
 import { getType, getDaysLeft, isCompleted, formatDate, formatDateTime } from '../constants'
-import { Bell, AlertTriangle, Clock, CheckCircle2, UserCheck, X, BellOff, PlusCircle, PencilLine, DollarSign, CalendarClock, ChevronDown, ChevronUp, Trash2, AtSign, ShieldAlert } from 'lucide-react'
+import { Bell, AlertTriangle, Clock, CheckCircle2, UserCheck, X, BellOff, PlusCircle, PencilLine, DollarSign, CalendarClock, ChevronDown, ChevronUp, Trash2, AtSign, ShieldAlert, ImageIcon, History } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import DateFilter, { matchesDateFilter, usePersistentDateFilter } from '../components/DateFilter'
@@ -16,7 +16,7 @@ const CATEGORIES = [
   { key: 'all',      label: 'All',      types: null },
   { key: 'urgent',   label: 'Urgent',   types: ['overdue', 'deadline_warning', 'deadline_updated'] },
   { key: 'mention',  label: 'Mentions', types: ['mention'] },
-  { key: 'progress', label: 'Progress', types: ['checklist', 'completed', 'created', 'updated'] },
+  { key: 'progress', label: 'Progress', types: ['checklist', 'completed', 'created', 'updated', 'photo_updated', 'followup_updated'] },
   { key: 'cost',     label: 'Cost',     types: ['cost_updated'] },
   { key: 'deleted',  label: 'Deleted',  types: ['deleted'] },
 ]
@@ -27,6 +27,10 @@ const CATEGORIES = [
  * scrolls and highlights the relevant section on the detail page.
  */
 const FOCUS_MAP = {
+  created:          'header',
+  updated:          'header',
+  photo_updated:    'photos',
+  followup_updated: 'followup',
   checklist:        'checklist',
   completed:        'checklist',
   cost_updated:     'cost',
@@ -133,6 +137,8 @@ export default function NotificationsPage() {
     assigned:         { icon: UserCheck,     color: '#6366f1', bg: '#eef2ff' },
     created:          { icon: PlusCircle,    color: '#6366f1', bg: '#eef2ff' },
     updated:          { icon: PencilLine,    color: '#8b5cf6', bg: '#f5f3ff' },
+    photo_updated:    { icon: ImageIcon,     color: '#06b6d4', bg: '#ecfeff' },
+    followup_updated: { icon: History,       color: '#22d3ee', bg: '#ecfeff' },
     checklist:        { icon: CheckCircle2,  color: '#10b981', bg: '#ecfdf5' },
     cost_updated:     { icon: DollarSign,    color: '#f59e0b', bg: '#fffbeb' },
     deadline_updated: { icon: CalendarClock, color: '#f59e0b', bg: '#fffbeb' },
